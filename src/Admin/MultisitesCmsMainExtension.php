@@ -1,6 +1,9 @@
 <?php
 namespace Symbiote\Multisites\Admin;
 
+use SilverStripe\Core\Manifest\ModuleResourceLoader;
+use SilverStripe\Forms\HTMLEditor\TinyMCEConfig;
+use SilverStripe\View\ThemeResourceLoader;
 use Symbiote\Multisites\Multisites;
 use Symbiote\Multisites\Model\Site;
 
@@ -38,33 +41,27 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
 	/**
 	* init (called from LeftAndMain extension hook)
 	**/
-	public function init(){
-		// set the htmleditor "content_css" based on the active site
-		$htmlEditorConfig = HtmlEditorConfig::get_active();
-		$site = Multisites::inst()->getActiveSite();
-		if($site && $theme = $site->getSiteTheme()){
+    public function init()
+    {
+        $site = Multisites::inst()->getActiveSite();
+        if ($site && $theme = $site->getSiteTheme()) {
 
-			$editorCSS = Config::inst()->get(CMSMain::class, 'multisites_editor_css_dir');
-			if (isset($editorCSS[$theme])) {
-				$cssFile = THEMES_DIR . "/$theme/" . $editorCSS[$theme] . "/editor.css";
-			} else {
-				$cssFile = THEMES_DIR . "/$theme/css/editor.css";
-			}
-			
-			if(file_exists(BASE_PATH . '/' . $cssFile)){
-				// NOTE: This ensures editor.css is invalided properly when it's updated.
-				$cssFile = $cssFile.'?m='.filemtime(BASE_PATH.'/'.$cssFile);
-				
-				$htmlEditorConfig->setOption('content_css', $cssFile);
-				
-				if($this->owner->getRequest()->isAjax() && $this->owner instanceof CMSPageEditController){
-					// Add editor css path to header so javascript can update ssTinyMceConfig.content_css
-					$this->owner->getResponse()->addHeader('X-HTMLEditor_content_css', $cssFile);	
-				}
-				
-			}	
-		}
-	}
+            $cssFilePath = 'css/editor.css';
+
+            $editorCSSDirs = Config::inst()->get(CMSMain::class, 'multisites_editor_css_dir');
+            if (isset($editorCSSDirs[$theme])) {
+                $cssFilePath = $editorCSSDirs[$theme] . '/editor.css';
+            }
+
+            $cssURL = ModuleResourceLoader::resourceURL(
+                ThemeResourceLoader::inst()->findThemedResource($cssFilePath, [$theme])
+            );
+            if ($cssURL) {
+                $tinyMCEConfig = TinyMCEConfig::get('cms');
+                $tinyMCEConfig->setContentCSS([$cssURL]);
+            }
+        }
+    }
 
 
 	/**
