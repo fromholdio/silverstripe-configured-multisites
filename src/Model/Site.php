@@ -341,7 +341,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 	public function hasFeature($feature){
 		if(!$this->DevID) return false;
 
-		$sites = Config::inst()->get('Multisites', 'site_features');
+        $sites = Config::inst()->get(Multisites::class, 'site_features');
 
 		if(!isset($sites[$this->DevID])) return false;
 
