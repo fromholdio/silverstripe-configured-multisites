@@ -31,9 +31,9 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
 	}
 
 	/**
-	 * @var Path to editor.css for themes. 
-	 * 
-	 * Key is the theme dir; value is the directory path beneath the theme dir if not "css" (e.g. "public/css") 
+	 * @var Path to editor.css for themes.
+	 *
+	 * Key is the theme dir; value is the directory path beneath the theme dir if not "css" (e.g. "public/css")
 	 */
 	private static $multisites_editor_css_dir = array();
 
@@ -43,11 +43,11 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
 	**/
     public function init()
     {
+        $htmlEditorConfig = HtmlEditorConfig::get_active();
         $site = Multisites::inst()->getActiveSite();
-        if ($site && $theme = $site->getSiteTheme()) {
-
+        if ($site && $theme = $site->getSiteTheme())
+        {
             $cssFilePath = 'css/editor.css';
-
             $editorCSSDirs = Config::inst()->get(CMSMain::class, 'multisites_editor_css_dir');
             if (isset($editorCSSDirs[$theme])) {
                 $cssFilePath = $editorCSSDirs[$theme] . '/editor.css';
@@ -56,9 +56,24 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
             $cssURL = ModuleResourceLoader::resourceURL(
                 ThemeResourceLoader::inst()->findThemedResource($cssFilePath, [$theme])
             );
-            if ($cssURL) {
-                $tinyMCEConfig = TinyMCEConfig::get('cms');
-                $tinyMCEConfig->setContentCSS([$cssURL]);
+
+            if ($cssURL)
+            {
+                $htmlEditorConfig->setOption('content_css', $cssURL);
+                $contentCSS = $htmlEditorConfig->getContentCSS();
+                if (is_string($contentCSS)) {
+                    $contentCSS = [$contentCSS];
+                }
+                else if (is_null($contentCSS)) {
+                    $contentCSS = [];
+                }
+                $contentCSS[] = $cssURL;
+                $htmlEditorConfig = $htmlEditorConfig->setContentCSS($contentCSS);
+
+                if($this->owner->getRequest()->isAjax() && $this->owner instanceof CMSPageEditController){
+                    // Add editor css path to header so javascript can update ssTinyMceConfig.content_css
+                    $this->owner->getResponse()->addHeader('X-HTMLEditor_content_css', $cssURL);
+                }
             }
         }
     }
@@ -101,7 +116,7 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
         $classNameField = $form->Fields()->dataFieldByName('ClassName');
         if ($classNameField) {
             $className = $classNameField->Value();
-            if ($className === 'Site') 
+            if ($className === 'Site')
             {
             	$form->Fields()->removeByName(array(SilverStripeNavigator::class));
                 $form->removeExtraClass('cms-previewable');
@@ -131,8 +146,8 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
 
 		$form->Fields()->insertAfter($site, 'q[Term]');
 	}
-	
-	
+
+
 	/**
 	 * Makes the default page id the first child of the current site
 	 * This makes the site tree view load with the current site open instead of just the first one
