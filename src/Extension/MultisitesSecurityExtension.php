@@ -21,12 +21,9 @@ class MultisitesSecurityExtension extends Extension
     function onBeforeSecurityLogin()
     {
         $site = Multisites::inst()->getCurrentSite();
-
-        if ($site && $site->Theme) {
-            $selectedThemes = explode(',', str_replace(' ', '', $site->Theme));
-            $selectedThemes[] = SSViewer::DEFAULT_THEME;
-            array_walk($selectedThemes, 'trim');
-            SSViewer::set_themes($selectedThemes);
+        if ($site) {
+            $themes = $site->getSiteThemes();
+            SSViewer::set_themes($themes);
         }
     }
 }

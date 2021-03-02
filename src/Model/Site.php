@@ -2,6 +2,7 @@
 
 namespace Symbiote\Multisites\Model;
 
+use SilverStripe\Core\Manifest\ModuleManifest;
 use Symbiote\Multisites\Multisites;
 
 use Symbiote\MultiValueField\Fields\MultiValueTextField;
@@ -83,21 +84,13 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
 	private static $icon = 'symbiote/silverstripe-multisites: client/images/world.png';
 
-	public function getCMSFields() {
-		$themes = $this->config()->available_themes;
-        if (count($themes)) {
-            $theme = new DropdownField('Theme', _t('Multisites.THEME', 'Theme'), $themes);
-            $theme->setEmptyString(_t('Multisites.DEFAULTTHEME', '(Default theme)'));
-        } else {
-            $theme = LiteralField::create('ThemeWarning', '<p class="error">No themes configured in Site.available_themes</p>');
-        }
-
+	public function getCMSFields()
+    {
 		$fields = new FieldList(new TabSet('Root', new Tab(
 			'Main',
 			new HeaderField('SiteConfHeader', _t('Multisites.SITECONF', 'Site Configuration')),
 			new TextField('Title', _t('Multisites.TITLE', 'Title')),
 			new TextField('Tagline', _t('Multisites.TAGLINE', 'Tagline/Slogan')),
-			$theme,
 			new HeaderField('SiteURLHeader', _t('Multisites.SITEURL', 'Site URL')),
 			new OptionsetField('Scheme', _t('Multisites.SCHEME', 'Scheme'), array(
 				'any'   => _t('Multisites.ANY', 'Any'),
@@ -324,15 +317,43 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 	 * Get the name of the theme applied to this site, allow extensions to override
 	 * @return String
 	 **/
-	public function getSiteTheme(){
-		$theme = $this->Theme;
-		if (!$theme) {
-			$theme = Config::inst()->get(SSViewer::class, 'theme');
-		}
-		$this->extend('updateGetSiteTheme', $theme);
-		return $theme;
-	}
+    public function getSiteTheme()
+    {
+        $theme = $this->Theme;
+        if (!$theme) {
+            $theme = Config::inst()->get(SSViewer::class, 'theme');
+            $theme = str_replace(' ', '', $theme);
+        }
+        $this->extend('updateGetSiteTheme', $theme);
+        return $theme;
+    }
 
+    public function getSiteThemes()
+    {
+        $themes = $this->getSiteDefaultSetting('themes');
+        if (is_null($themes))
+        {
+            $themes = [SSViewer::PUBLIC_THEME];
+            $theme = $this->getSiteTheme();
+            if (!is_null($theme)) $themes[] = $theme;
+            $themes[] = ModuleManifest::config()->get('project');
+            $themes[] = SSViewer::DEFAULT_THEME;
+        }
+        array_walk($themes, 'trim');
+        return $themes;
+    }
+
+    public function getSiteDefaultSetting(string $settingKey)
+    {
+        $devID = $this->DevID;
+        if (!$devID) return null;
+        $allSettings = Config::inst()->get(Multisites::class, 'default_settings');
+        if (empty($allSettings[$devID])) return null;
+
+        $settings = $allSettings[$devID];
+        if (empty($settings[$settingKey])) return null;
+        return $settings[$settingKey];
+    }
 
 	/**
 	 * Checks to see if this site has a feature as defined in Muiltisites.site_features config

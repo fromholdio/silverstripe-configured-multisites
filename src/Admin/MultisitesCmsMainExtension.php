@@ -45,34 +45,39 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
     {
         $htmlEditorConfig = HtmlEditorConfig::get_active();
         $site = Multisites::inst()->getActiveSite();
-        if ($site && $theme = $site->getSiteTheme())
+        if ($site)
         {
-            $cssFilePath = 'css/editor.css';
+            $themes = $site->getSiteThemes();
             $editorCSSDirs = Config::inst()->get(CMSMain::class, 'multisites_editor_css_dir');
-            if (isset($editorCSSDirs[$theme])) {
-                $cssFilePath = $editorCSSDirs[$theme] . '/editor.css';
-            }
-
-            $cssURL = ModuleResourceLoader::resourceURL(
-                ThemeResourceLoader::inst()->findThemedResource($cssFilePath, [$theme])
-            );
-
-            if ($cssURL)
+            foreach ($themes as $theme)
             {
-                $htmlEditorConfig->setOption('content_css', $cssURL);
-                $contentCSS = $htmlEditorConfig->getContentCSS();
-                if (is_string($contentCSS)) {
-                    $contentCSS = [$contentCSS];
+                $cssFilePath = 'css/editor.css';
+                if (isset($editorCSSDirs[$theme])) {
+                    $cssFilePath = $editorCSSDirs[$theme] . '/editor.css';
                 }
-                else if (is_null($contentCSS)) {
-                    $contentCSS = [];
-                }
-                $contentCSS[] = $cssURL;
-                $htmlEditorConfig = $htmlEditorConfig->setContentCSS($contentCSS);
 
-                if($this->owner->getRequest()->isAjax() && $this->owner instanceof CMSPageEditController){
-                    // Add editor css path to header so javascript can update ssTinyMceConfig.content_css
-                    $this->owner->getResponse()->addHeader('X-HTMLEditor_content_css', $cssURL);
+                $cssURL = ModuleResourceLoader::resourceURL(
+                    ThemeResourceLoader::inst()->findThemedResource($cssFilePath, [$theme])
+                );
+
+                if ($cssURL)
+                {
+                    $htmlEditorConfig->setOption('content_css', $cssURL);
+                    $contentCSS = $htmlEditorConfig->getContentCSS();
+                    if (is_string($contentCSS)) {
+                        $contentCSS = [$contentCSS];
+                    }
+                    else if (is_null($contentCSS)) {
+                        $contentCSS = [];
+                    }
+                    $contentCSS[] = $cssURL;
+                    $htmlEditorConfig = $htmlEditorConfig->setContentCSS($contentCSS);
+
+                    if($this->owner->getRequest()->isAjax() && $this->owner instanceof CMSPageEditController){
+                        // Add editor css path to header so javascript can update ssTinyMceConfig.content_css
+                        $this->owner->getResponse()->addHeader('X-HTMLEditor_content_css', $cssURL);
+                    }
+                    break;
                 }
             }
         }

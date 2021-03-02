@@ -52,13 +52,8 @@ class MultisitesControllerExtension extends Extension
 
         // are we on the frontend?
         if (!$this->owner instanceof \SilverStripe\Admin\LeftAndMain) {
-            $theme = $site->getSiteTheme();
-            if ($theme) {
-                $selectedThemes = explode(',', str_replace(' ', '', $theme));
-                $selectedThemes[] = SSViewer::DEFAULT_THEME;
-                array_walk($selectedThemes, 'trim');
-                SSViewer::set_themes($selectedThemes);
-            }
+            $themes = $site->getSiteThemes();
+            SSViewer::set_themes($themes);
         }
 
         // Update default uploads folder to site
