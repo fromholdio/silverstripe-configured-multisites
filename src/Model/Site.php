@@ -150,7 +150,10 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 	}
 
 	public function AbsoluteLink($action = null){
-		return $this->getURL() . '/';
+	    return Controller::join_links(
+	        $this->getURL(),
+            $action
+        );
 	}
 
 	public function Link($action = null) {
