@@ -20,9 +20,6 @@ SilverStripe\Security\Member:
 SilverStripe\Admin\ModelAdmin:
   extensions:
     - Symbiote\Multisites\Admin\MultisitesModelAdminExtension
-SilverStripe\Security\Security:
-  extensions:
-    - Symbiote\Multisites\Extension\MultisitesSecurityExtension
 SilverStripe\SiteConfig\SiteConfig:
   extensions:
     - Symbiote\Multisites\Extension\MultisitesSiteConfigExtension
@@ -32,3 +29,13 @@ SilverStripe\CMS\Model\SiteTree:
 SilverStripe\Reports\Report:
   extensions:
     - Symbiote\Multisites\Extension\MultisitesReport
+
+---
+Name: multisites-extensions-security
+After: multisites-extensions
+Except:
+  classexists: 'SilverStripe\LoginForms\EnablerExtension'
+---
+SilverStripe\Security\Security:
+  extensions:
+    - Symbiote\Multisites\Extension\MultisitesSecurityExtension
