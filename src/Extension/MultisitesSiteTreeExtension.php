@@ -2,6 +2,7 @@
 
 namespace Symbiote\Multisites\Extension;
 
+use SilverStripe\Control\Controller;
 use Symbiote\Multisites\Control\MultisitesRootController;
 use Symbiote\Multisites\Model\Site;
 use Symbiote\Multisites\Multisites;
@@ -143,11 +144,18 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
 
     public function alternateAbsoluteLink($action = null)
     {
-        if ($this->owner->SiteID && $this->owner->SiteID == Multisites::inst()->getCurrentSiteId()) {
-            return Director::absoluteURL($this->owner->RelativeLink($action));
-        } else {
-            return $this->owner->RelativeLink($action);
+        $siteID = $this->getOwner()->SiteID;
+        if (!empty($siteID))
+        {
+            $site = $this->getOwner()->Site();
+            return Director::absoluteURL(
+                Controller::join_links(
+                    $site->AbsoluteLink(),
+                    $this->getOwner()->RelativeLink($action)
+                )
+            );
         }
+        return $this->getOwner()->RelativeLink($action);
     }
 
     /**
