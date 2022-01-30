@@ -147,13 +147,14 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
         $siteID = $this->getOwner()->SiteID;
         if (!empty($siteID))
         {
-            $site = $this->getOwner()->Site();
-            return Director::absoluteURL(
-                Controller::join_links(
-                    $site->AbsoluteLink(),
-                    $this->getOwner()->RelativeLink($action)
-                )
-            );
+            $link = $this->getOwner()->RelativeLink($action);
+            if (!Director::is_absolute_url($link))
+            {
+                $site = $this->getOwner()->Site();
+                $siteAbsoluteLink = $site->AbsoluteLink();
+                $link = Controller::join_links($siteAbsoluteLink, $link);
+            }
+            return Director::absoluteURL($link);
         }
         return $this->getOwner()->RelativeLink($action);
     }
