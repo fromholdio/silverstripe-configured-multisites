@@ -346,6 +346,19 @@ class Site extends Page implements HiddenClass, PermissionProvider {
         return $themes;
     }
 
+    public function getSiteErrorThemes()
+    {
+        $errorSettings = $this->getSiteDefaultSetting('errors');
+        $themes = $errorSettings['themes'] ?? null;
+        if (empty($themes)) {
+            $themes = $this->getSiteThemes();
+        }
+        else {
+            array_walk($themes, 'trim');
+        }
+        return $themes;
+    }
+
     public function getSiteDefaultSetting(string $settingKey)
     {
         $devID = $this->DevID;

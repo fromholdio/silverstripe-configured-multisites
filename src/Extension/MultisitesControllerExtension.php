@@ -2,6 +2,7 @@
 
 namespace Symbiote\Multisites\Extension;
 
+use SilverStripe\ErrorPage\ErrorPageController;
 use Symbiote\Multisites\Multisites;
 use SilverStripe\ORM\DatabaseAdmin;
 use SilverStripe\CMS\Model\SiteTree;
@@ -51,7 +52,11 @@ class MultisitesControllerExtension extends Extension
         }
 
         // are we on the frontend?
-        if (!$this->owner instanceof \SilverStripe\Admin\LeftAndMain) {
+        if ($this->owner instanceof ErrorPageController) {
+            $themes = $site->getSiteErrorThemes();
+            SSViewer::set_themes($themes);
+        }
+        elseif (!$this->owner instanceof \SilverStripe\Admin\LeftAndMain) {
             $themes = $site->getSiteThemes();
             SSViewer::set_themes($themes);
         }
