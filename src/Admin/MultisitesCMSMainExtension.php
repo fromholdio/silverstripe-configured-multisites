@@ -149,7 +149,7 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
 		);
 		$site->setEmptyString(_t('Multisites.ALLSITES', 'All sites'));
 
-		$form->Fields()->insertAfter($site, 'q[Term]');
+		$form->Fields()->insertAfter('q[Term]', $site);
 	}
 
 
