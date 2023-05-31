@@ -1,6 +1,7 @@
 <?php
 namespace Symbiote\Multisites\Control;
 
+use SilverStripe\Control\HTTPResponse;
 use Symbiote\Multisites\Multisites;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\ORM\DB;
@@ -13,7 +14,8 @@ use SilverStripe\CMS\Controllers\RootURLController;
  */
 class MultisitesRootController extends RootURLController {
 
-	public function handleRequest(HTTPRequest $request) {
+	public function handleRequest(HTTPRequest $request): HTTPResponse
+    {
 		self::$is_at_root = true;
         $this->beforeHandleRequest($request);
 
@@ -56,12 +58,6 @@ class MultisitesRootController extends RootURLController {
         $this->afterHandleRequest();
 
         return $this->getResponse();
-
-
-
-
-
-		return $response;
 	}
 
 	/**

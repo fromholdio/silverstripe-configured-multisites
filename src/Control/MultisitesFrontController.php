@@ -2,6 +2,7 @@
 
 namespace Symbiote\Multisites\Control;
 
+use SilverStripe\CMS\Controllers\ContentController;
 use Symbiote\Multisites\Multisites;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Director;
@@ -19,7 +20,8 @@ class MultisitesFrontController extends ModelAsController {
 	 * Overrides ModelAsController->getNestedController to find the nested controller
 	 * on a per-site basis
 	 **/
-	public function getNestedController() {
+	public function getNestedController(): ContentController
+    {
 		$request = $this->request;
 		$segment = $request->param('URLSegment');
 		$site    = Multisites::inst()->getCurrentSiteId();
@@ -53,23 +55,23 @@ class MultisitesFrontController extends ModelAsController {
 					$this->response = new HTTPResponse();
 					$this->response->redirect($map->getLink(), 301);
 					return $this->response;
-				}	
+				}
 			}
-	
+
 			// use OldPageRedirector if it exists, to find old page
 			if(class_exists(OldPageRedirector::class)){
 				if($redirect = OldPageRedirector::find_old_page(array($segment), Multisites::inst()->getCurrentSite())){
 					$redirect = SiteTree::get_by_link($redirect);
 				}
 			}else{
-				$redirect = self::find_old_page($segment, $site);			
-			}			
+				$redirect = self::find_old_page($segment, $site);
+			}
 
 			if($redirect) {
 				$getVars = $request->getVars();
 				//remove the url var as it confuses the routing
 				unset($getVars['url']);
-				
+
 				$url = Controller::join_links(
 						$redirect->Link(
 							Controller::join_links(
@@ -79,11 +81,11 @@ class MultisitesFrontController extends ModelAsController {
 							)
 						)
 					);
-				
+
 				if(!empty($getVars)){
 					$url .= '?' . http_build_query($getVars);
 				}
-				
+
 				$this->response->redirect($url, 301);
 
 				return $this->response;
