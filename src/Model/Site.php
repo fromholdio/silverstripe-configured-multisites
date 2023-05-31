@@ -173,7 +173,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
 	public function onBeforeWrite() {
 		$normalise = function($url) {
-			return trim(str_replace(array('http://', 'https://'), null, $url), '/');
+			return trim(str_replace(array('http://', 'https://'), '', $url), '/');
 		};
 
 		$this->Host = $normalise($this->Host);
