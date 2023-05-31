@@ -260,7 +260,7 @@ class Multisites
 
                 $site = Site::get()->byID($page->SiteID);
 
-                if ($site->ID) {
+                if ($site?->ID) {
                     $this->setActiveSite($site);
                     return $site;
                 }
