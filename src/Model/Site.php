@@ -241,7 +241,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 		$site->IsDefault = true;
 		$site->FolderID = Folder::find_or_make('default-site')->ID;
 		$site->write();
-		$site->publish('Stage', 'Live');
+		$site->copyVersionToStage('Stage', 'Live');
 
 		DB::alteration_message('Default site created', 'created');
 
@@ -252,7 +252,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 				$page->ParentID = $site->ID;
 				$page->write();
 				if ($page->isPublished()) {
-					$page->publish('Stage', 'Live');
+					$page->copyVersionToStage('Stage', 'Live');
 				}
 			}
 
