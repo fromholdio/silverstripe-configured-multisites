@@ -86,7 +86,27 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
 	public function getCMSFields()
     {
-		$fields = new FieldList(new TabSet('Root', new Tab(
+        if ($this->hasMethod('runCMSFieldsScaffolderBeforeUpdate')) {
+            $this->beforeUpdateSiteCMSFields(function (FieldList $fields) {
+                return $this->runCMSFieldsScaffolderBeforeUpdate($fields);
+            });
+        }
+
+        if ($this->hasMethod('runCMSFieldsScaffolderAfterUpdate')) {
+            $this->afterUpdateSiteCMSFields(function (FieldList $fields) {
+                if ($this->hasMethod('betweenUpdateSiteCMSFields')) {
+                    $fields = $this->betweenUpdateSiteCMSFields($fields);
+                }
+                $areaField = $fields->fieldByName('Root.Main.ElementalArea');
+                if ($areaField) {
+                    $fields->removeByName('ElementalArea');
+                    $fields->addFieldToTab('Root.ContentTabSet.ContentMainTab', $areaField);
+                }
+                return $this->runCMSFieldsScaffolderAfterUpdate($fields);
+            });
+        }
+
+        $fields = new FieldList(new TabSet('Root', new Tab(
 			'Main',
 			new HeaderField('SiteConfHeader', _t('Multisites.SITECONF', 'Site Configuration')),
 			new TextField('Title', _t('Multisites.TITLE', 'Title')),
@@ -134,8 +154,33 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
 		$this->extend('updateSiteCMSFields', $fields);
 
+        if ($this->hasMethod('removeCMSFieldsScaffolderFields')) {
+            $fields = $this->removeCMSFieldsScaffolderFields($fields);
+        }
 		return $fields;
 	}
+
+    /**
+     * Allows user code to hook into DataObject::getCMSFields prior to updateCMSFields
+     * being called on extensions
+     *
+     * @param callable $callback The callback to execute
+     */
+    protected function beforeUpdateSiteCMSFields($callback)
+    {
+        $this->beforeExtending('updateSiteCMSFields', $callback);
+    }
+
+    /**
+     * Allows user code to hook into DataObject::getCMSFields after updateCMSFields
+     * being called on extensions
+     *
+     * @param callable $callback The callback to execute
+     */
+    protected function afterUpdateSiteCMSFields(callable $callback)
+    {
+        $this->afterExtending('updateSiteCMSFields', $callback);
+    }
 
 	public function getUrl() {
 		if($this->Host){
