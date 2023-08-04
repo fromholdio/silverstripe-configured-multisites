@@ -2,7 +2,9 @@
 
 namespace Symbiote\Multisites\Model;
 
+use SilverStripe\Admin\LeftAndMain;
 use SilverStripe\Core\Manifest\ModuleManifest;
+use SilverStripe\Security\Security;
 use Symbiote\Multisites\Multisites;
 
 use Symbiote\MultiValueField\Fields\MultiValueTextField;
@@ -86,6 +88,12 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
 	public function getCMSFields()
     {
+        if (!$this->canEdit() && Controller::curr() instanceof LeftAndMain) {
+            if ($this->hasMethod('getNoEditPermissionCMSFields')) {
+                return $this->getNoEditPermissionCMSFields();
+            }
+        }
+
         if ($this->hasMethod('runCMSFieldsScaffolderBeforeUpdate')) {
             $this->beforeUpdateSiteCMSFields(function (FieldList $fields) {
                 return $this->runCMSFieldsScaffolderBeforeUpdate($fields);
