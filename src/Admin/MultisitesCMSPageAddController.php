@@ -1,10 +1,12 @@
 <?php
 namespace Symbiote\Multisites\Admin;
 
+use SilverStripe\Forms\CompositeField;
+use SilverStripe\Forms\LiteralField;
+use SilverStripe\Forms\OptionsetField;
+use SilverStripe\ORM\FieldType\DBField;
 use Symbiote\Multisites\Multisites;
-
 use SilverStripe\Forms\HiddenField;
-use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Forms\TreeDropdownField;
 use SilverStripe\Forms\RequiredFields;
 use SilverStripe\CMS\Controllers\CMSPageAddController;
@@ -29,32 +31,54 @@ class MultisitesCMSPageAddController extends CMSPageAddController {
 
 	private static $url_priority = 43;
 
-	public function AddForm() {
+	public function AddForm()
+    {
 		$form   = parent::AddForm();
 		$fields = $form->Fields();
 
-		$fields->push(new HiddenField('Parent', null, true));
+        $numericLabelTmpl = '<span class="step-label"><span class="flyout">Step %d. </span><span class="title">%s</span></span>';
 
-		// Enforce a parent mode of "child" to correctly read the "allowed children".
-        $parentMode = $fields->dataFieldByName('ParentModeField');
+        $parentWrapper = CompositeField::create();
+        $parentWrapper->setName('ParentWrapper');
+        $parentWrapper->setTitle(
+            DBField::create_field(
+                'HTMLFragment',
+                sprintf($numericLabelTmpl,
+                    1,
+                    _t(
+                        'SilverStripe\\CMS\\Controllers\\CMSMain.ChoosePageParentMode',
+                        'Choose where to create this page')
+                )
+            )
+        );
 
-		$parentMode->removeByName('Top level');
-        $parentMode->setValue('child');
+        $parentModeField = OptionsetField::create('ParentModeField', null, ['child' => 'child'], 'child');
+        $parentWrapper->push($parentModeField);
 
-		$fields->insertAfter(
-            'ParentModeField',
-            $parent = new TreeDropdownField(
-			'ParentID', '', SiteTree::class, 'ID', 'TreeTitle'
-		));
+        $hideParentModeField = LiteralField::create('HideParentModeField',
+            '<style>#Form_AddForm_ParentModeField_Holder {display: none !important;}</style>'
+        );
+        $parentWrapper->push($hideParentModeField);
 
-		$parentID = $this->request->getVar('ParentID');
-		$parentID = $parentID ? $parentID : Multisites::inst()->getCurrentSiteId();
+        $parentField = HiddenField::create('Parent', null, true);
+        $parentWrapper->push($parentField);
 
-		$parent->setForm($form);
-		$parent->setValue((int)$parentID);
+        /** @var TreeDropdownField $parentField */
+        $parentField = $fields->dataFieldByName('ParentID');
+        $parentField->setHasEmptyDefault(false);
+        $parentField->setShowSearch(true);
+        $parentField->setAttribute('style', 'padding-top:.5385rem;');
 
-		$form->setValidator(new RequiredFields('ParentID'));
-		return $form;
+        $parentID = $this->getRequest()->getVar('ParentID');
+        $parentID = $parentID ? $parentID : Multisites::inst()->getCurrentSiteId();
+        $parentField->setValue($parentID);
+        $parentWrapper->push($parentField);
+
+        $fields->replaceField('ParentModeField', $parentWrapper);
+        $parentWrapper->setForm($form);
+
+        $form->setValidator(RequiredFields::create('ParentID'));
+        return $form;
 	}
 
 }
