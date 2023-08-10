@@ -40,6 +40,15 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
         return Multisites::inst()->getDefaultSite();
     }
 
+    public function updateLink(&$link, $action, $relativeLink)
+    {
+        $siteID = $this->getOwner()->getField('SiteID');
+        $activeSiteID = Multisites::inst()->getActiveSite()?->getField('ID');
+        if ($siteID !== $activeSiteID) {
+            $link = $relativeLink;
+        }
+    }
+
     public function updateCMSFields(FieldList $fields)
     {
         if ($this->owner->ParentID) {
