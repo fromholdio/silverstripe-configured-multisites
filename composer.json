@@ -16,11 +16,6 @@
 		"silverstripe/admin": "~2.0",
 		"symbiote/silverstripe-multivaluefield": "~6.0"
 	},
-	"extra": {
-        "expose": [
-            "client"
-        ],
-	},
     "autoload": {
         "psr-4": {
             "Symbiote\\Multisites\\": "src/"
