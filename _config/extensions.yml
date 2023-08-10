@@ -1,32 +1,39 @@
 ---
 Name: multisites-extensions
-Before: errorpage-extensions
 ---
 SilverStripe\CMS\Controllers\CMSMain:
   extensions:
     - Symbiote\Multisites\Admin\MultisitesCMSMainExtension
+
 SilverStripe\Control\Controller:
   extensions:
     - Symbiote\Multisites\Extension\MultisitesControllerExtension
-SilverStripe\CMS\Controllers\ContentController:
-  extensions:
-    - Symbiote\Multisites\Extension\MultisitesContentControllerExtension
-SilverStripe\ErrorPage\ErrorPage:
-  extensions:
-    - Symbiote\Multisites\Extension\MultisitesErrorPageExtension
+
 SilverStripe\Security\Member:
   extensions:
     - Symbiote\Multisites\Extension\MultisitesMemberExtension
+
 SilverStripe\Admin\ModelAdmin:
   extensions:
     - Symbiote\Multisites\Admin\MultisitesModelAdminExtension
-SilverStripe\SiteConfig\SiteConfig:
-  extensions:
-    - Symbiote\Multisites\Extension\MultisitesSiteConfigExtension
+
 SilverStripe\CMS\Model\SiteTree:
+  can_be_root: false
   extensions:
     - Symbiote\Multisites\Extension\MultisitesSiteTreeExtension
+
+Symbiote\Multisites\Model\Site:
+  can_be_root: true
+
 SilverStripe\Reports\Report:
+  excluded_reports:
+    - SilverStripe\CMS\Reports\EmptyPagesReport
+    - SilverStripe\CMS\Reports\RecentlyEditedReport
+    - SilverStripe\CMS\Reports\BrokenLinksReport
+    - SilverStripe\CMS\Reports\BrokenFilesReport
+    - SilverStripe\CMS\Reports\BrokenVirtualPagesReport
+    - SilverStripe\CMS\Reports\BrokenRedirectorPagesReport
+
   extensions:
     - Symbiote\Multisites\Extension\MultisitesReport
 

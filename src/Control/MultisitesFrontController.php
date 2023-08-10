@@ -36,28 +36,8 @@ class MultisitesFrontController extends ModelAsController {
 		));
 		$page = $page->first();
 
-		if(!$page) {
-			// Check to see if linkmapping module is installed and if so, if there a map for this request.
-			if(class_exists('LinkMapping')){
-				$queryString = '?';
-				if ($request->requestVars()){
-					foreach($request->requestVars() as  $key => $value) {
-						if($key !='url'){$queryString .=$key.'='.$value.'&';}
-					}
-					$queryString =  rtrim($queryString,'&');
-				}
-				$link = ($queryString != '?' ? $request->getURL().$queryString : $request->getURL());
-				$link = trim(Director::makeRelative($link));
-
-				$map  = LinkMapping::get()->filter('MappedLink', $link)->first();
-
-				if ($map) {
-					$this->response = new HTTPResponse();
-					$this->response->redirect($map->getLink(), 301);
-					return $this->response;
-				}
-			}
-
+		if(!$page)
+        {
 			// use OldPageRedirector if it exists, to find old page
 			if(class_exists(OldPageRedirector::class)){
 				if($redirect = OldPageRedirector::find_old_page(array($segment), Multisites::inst()->getCurrentSite())){

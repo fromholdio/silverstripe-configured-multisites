@@ -1,0 +1,10 @@
+---
+Name: multsitescache
+After:
+  - '#corecache'
+---
+SilverStripe\Core\Injector\Injector:
+  Psr\SimpleCache\CacheInterface.multisites:
+    factory: SilverStripe\Core\Cache\CacheFactory
+    constructor:
+      namespace: "multisites"

@@ -3,6 +3,7 @@
 namespace Symbiote\Multisites\Extension;
 
 use SilverStripe\Core\Extension;
+use Symbiote\Multisites\Multisites;
 
 /**
  * @package silverstripe-multisites

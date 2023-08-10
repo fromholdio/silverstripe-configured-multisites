@@ -20,7 +20,9 @@ use SilverStripe\Forms\HTMLEditor\HTMLEditorConfig;
 /**
  * @package silverstripe-multisites
  */
-class MultisitesCMSMainExtension extends LeftAndMainExtension {
+class MultisitesCMSMainExtension extends LeftAndMainExtension
+{
+    private static $is_add_site_enabled = false;
 
 	private static $allowed_actions = array(
 		'AddSiteForm'
@@ -37,6 +39,10 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
 	 */
 	private static $multisites_editor_css_dir = array();
 
+    public function isAddSiteEnabled(): bool
+    {
+        return $this->getOwner()->config()->get('is_add_site_enabled');
+    }
 
 	/**
 	* init (called from LeftAndMain extension hook)
@@ -89,6 +95,9 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
 	 * @return Form
 	 **/
 	public function AddSiteForm() {
+        if (!$this->getOwner()->isAddSiteEnabled()) {
+            return null;
+        }
 		return new Form(
 			$this->owner,
 			'AddSiteForm',
@@ -106,6 +115,9 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension {
 	 * AddSiteForm action to add a new site
 	 **/
 	public function doAddSite() {
+        if (!$this->getOwner()->isAddSiteEnabled()) {
+            return $this->owner->redirectBack();
+        }
 		$site = $this->owner->getNewItem('new-' . Site::class .'-0', false);
 		$site->write();
 
