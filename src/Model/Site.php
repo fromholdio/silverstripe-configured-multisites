@@ -4,11 +4,8 @@ namespace Symbiote\Multisites\Model;
 
 use SilverStripe\Admin\LeftAndMain;
 use SilverStripe\Core\Manifest\ModuleManifest;
-use SilverStripe\Security\Security;
 use Symbiote\Multisites\Multisites;
-
 use Symbiote\MultiValueField\Fields\MultiValueTextField;
-
 use Page;
 use SilverStripe\Assets\Folder;
 use SilverStripe\Forms\DropdownField;
@@ -35,7 +32,6 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\View\SSViewer;
 use SilverStripe\ORM\HiddenClass;
 use SilverStripe\Security\PermissionProvider;
-use SilverStripe\Forms\LiteralField;
 
 /**
  * @package silverstripe-multisites
@@ -210,14 +206,14 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 	}
 
 	public function Link($action = null) {
-		if ($this->ID && $this->ID == Multisites::inst()->getCurrentSiteId()) {
+		if ($this->ID && $this->ID == Multisites::inst()->getActiveSite()->getField('ID')) {
 			return parent::Link($action);
 		}
 		return Controller::join_links($this->RelativeLink($action));
 	}
 
 	public function RelativeLink($action = null) {
-		if($this->ID && $this->ID == Multisites::inst()->getCurrentSiteId()) {
+		if($this->ID && $this->ID == Multisites::inst()->getActiveSite()->getField('ID')) {
 			return $action;
 		} else {
 			return Controller::join_links($this->getUrl(), $action);
@@ -367,6 +363,58 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
 		return $sitetree;
 	}
+
+    public function getHomePage()
+    {
+        return $this->getByLink('/home');
+    }
+
+    public function getByLink($link)
+    {
+        $current = $this->getField('ID');
+        if(trim($link, '/')) {
+            $link = trim(Director::makeRelative($link), '/');
+        } else {
+            $link = RootURLController::get_homepage_link();
+        }
+
+        $parts = Convert::raw2sql(preg_split('|/+|', $link));
+
+        // Grab the initial root level page to traverse down from.
+        $URLSegment = array_shift($parts);
+
+        $sitetree   = DataObject::get_one (
+            SiteTree::class, "\"URLSegment\" = '$URLSegment' AND \"ParentID\" = " . $current, false
+        );
+
+        if (!$sitetree) {
+            return false;
+        }
+
+        /// Fall back on a unique URLSegment for b/c.
+        if(!$sitetree && self::nested_urls() && $page = DataObject::get(SiteTree::class, "\"URLSegment\" = '$URLSegment'")->First()) {
+            return $page;
+        }
+
+        // Check if we have any more URL parts to parse.
+        if(!count($parts)) return $sitetree;
+
+        // Traverse down the remaining URL segments and grab the relevant SiteTree objects.
+        foreach($parts as $segment) {
+            $next = DataObject::get_one (
+                SiteTree::class, "\"URLSegment\" = '$segment' AND \"ParentID\" = $sitetree->ID", false
+            );
+
+            if(!$next) {
+                return false;
+            }
+
+            $sitetree->destroy();
+            $sitetree = $next;
+        }
+
+        return $sitetree;
+    }
 
 
 	/**
