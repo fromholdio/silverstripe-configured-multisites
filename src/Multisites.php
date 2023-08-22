@@ -2,6 +2,7 @@
 
 namespace Symbiote\Multisites;
 
+use SilverStripe\Security\Security;
 use Symbiote\Multisites\Model\Site;
 
 use SilverStripe\Control\Director;
@@ -311,7 +312,7 @@ class Multisites
      * */
     public function sitesManagedByMember($member = null)
     {
-        $member = $member ?: Member::currentUser();
+        $member = $member ?: Security::getCurrentUser();
         if (!$member) return array();
 
         $sites = Site::get();
