@@ -2,7 +2,6 @@
 
 namespace Symbiote\Multisites\Extension;
 
-use SilverStripe\ErrorPage\ErrorPageController;
 use Symbiote\Multisites\Multisites;
 use SilverStripe\ORM\DatabaseAdmin;
 use SilverStripe\CMS\Model\SiteTree;
@@ -11,10 +10,6 @@ use SilverStripe\Dev\DevBuildController;
 use SilverStripe\View\SSViewer;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Assets\Upload;
-use SilverStripe\ErrorPage\ErrorPage;
-use SilverStripe\View\Requirements;
-use SilverStripe\CMS\Controllers\ModelAsController;
-use SilverStripe\Control\HTTPResponse_Exception;
 use SilverStripe\Core\Extension;
 
 /**
@@ -52,11 +47,7 @@ class MultisitesControllerExtension extends Extension
         }
 
         // are we on the frontend?
-        if ($this->owner instanceof ErrorPageController) {
-            $themes = $site->getSiteErrorThemes();
-            SSViewer::set_themes($themes);
-        }
-        elseif (!$this->owner instanceof \SilverStripe\Admin\LeftAndMain) {
+        if (!$this->owner instanceof \SilverStripe\Admin\LeftAndMain) {
             $themes = $site->getSiteThemes();
             SSViewer::set_themes($themes);
         }
@@ -65,27 +56,6 @@ class MultisitesControllerExtension extends Extension
         $folder = $site->Folder();
         if ($folder->exists()) {
             Config::modify()->set(Upload::class, 'uploads_folder', $folder->Name);
-        }
-    }
-
-    /**
-     * 	Retrieve the correct error page for the current multisite instance.
-     * 	@param integer
-     * 	@param SS_HTTPRequest
-     * 	@throws SS_HTTPResponse_Exception
-     */
-    public function onBeforeHTTPError($code, $request)
-    {
-
-        $errorPage = ErrorPage::get()->filter(array(
-                'ErrorCode' => $code,
-                'SiteID' => Multisites::inst()->getCurrentSiteId()
-            ))->first();
-        if ($errorPage) {
-            Requirements::clear();
-            Requirements::clear_combined_files();
-            $response = ModelAsController::controller_for($errorPage)->handleRequest($request);
-            throw new HTTPResponse_Exception($response, $code);
         }
     }
 }
