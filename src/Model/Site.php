@@ -504,6 +504,21 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 		);
 	}
 
+    public function canCreate($member = null, $context = [])
+    {
+        return false;
+    }
+
+    public function canDelete($member = null)
+    {
+        return false;
+    }
+
+    public function canArchive($member = null)
+    {
+        return false;
+    }
+
 	/**
 	 *	This corrects an issue when duplicating a site, since the parent comes back as a false object.
 	 */
