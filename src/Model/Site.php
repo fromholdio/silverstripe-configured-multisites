@@ -269,6 +269,10 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 		return $folder->ID;
 	}
 
+    public function onBeforeDuplicate($original, $doWrite)
+    {
+        throw new \LogicException('Sorry, sites cannot be duplicated');
+    }
 
 	public function onAfterWrite() {
 		Multisites::inst()->build();
