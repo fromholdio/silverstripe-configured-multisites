@@ -3,79 +3,50 @@
 namespace Symbiote\Multisites\Control;
 
 use SilverStripe\CMS\Controllers\ContentController;
+use SilverStripe\ORM\DataObject;
+use SilverStripe\View\Parsers\URLSegmentFilter;
 use Symbiote\Multisites\Multisites;
 use SilverStripe\CMS\Model\SiteTree;
-use SilverStripe\Control\Director;
-use SilverStripe\Control\HTTPResponse;
-use SilverStripe\CMS\Controllers\OldPageRedirector;
-use SilverStripe\Control\Controller;
 use SilverStripe\CMS\Controllers\ModelAsController;
 /**
  * @package silverstripe-multisites
  */
-class MultisitesFrontController extends ModelAsController {
-
-
+class MultisitesFrontController extends ModelAsController
+{
 	/**
 	 * Overrides ModelAsController->getNestedController to find the nested controller
 	 * on a per-site basis
 	 **/
 	public function getNestedController(): ContentController
     {
-		$request = $this->request;
-		$segment = $request->param('URLSegment');
-		$site    = Multisites::inst()->getCurrentSiteId();
+        $request = $this->getRequest();
+        $urlSegment = $request?->param('URLSegment');
+        if (empty($urlSegment)) {
+            throw new \Exception('MultisitesFrontController->getNestedController(): was not passed a URLSegment value.');
+        }
 
-		if(!$site) {
-			return $this->httpError(404);
-		}
+        $siteID = Multisites::inst()->getCurrentSiteId();
+        if (empty($siteID)) {
+            throw new \Exception('MultisitesFrontController->getNestedController(): could not find a Current Site ID.');
+        }
 
-		$page = SiteTree::get()->filter(array(
-			'ParentID'   => $site,
-			'URLSegment' => rawurlencode($segment)
-		));
-		$page = $page->first();
+        // url encode unless it's multibyte (already pre-encoded in the database)
+        $filter = URLSegmentFilter::create();
+        if (!$filter->getAllowMultibyte()) {
+            $urlSegment = rawurlencode($urlSegment);
+        }
 
-		if(!$page)
-        {
-			// use OldPageRedirector if it exists, to find old page
-			if(class_exists(OldPageRedirector::class)){
-				if($redirect = OldPageRedirector::find_old_page(array($segment), Multisites::inst()->getCurrentSite())){
-					$redirect = SiteTree::get_by_link($redirect);
-				}
-			}else{
-				$redirect = self::find_old_page($segment, $site);
-			}
+        // Select child page
+        $tableName = DataObject::singleton(SiteTree::class)->baseTable();
+        $conditions = [sprintf('"%s"."URLSegment"', $tableName) => $urlSegment];
+        $conditions[] = [sprintf('"%s"."ParentID"', $tableName) => $siteID];
+        /** @var SiteTree $siteTree */
+        $siteTree = DataObject::get_one(SiteTree::class, $conditions);
 
-			if($redirect) {
-				$getVars = $request->getVars();
-				//remove the url var as it confuses the routing
-				unset($getVars['url']);
+        if (!$siteTree) {
+            $this->httpError(404);
+        }
 
-				$url = Controller::join_links(
-						$redirect->Link(
-							Controller::join_links(
-								$request->param('Action'),
-								$request->param('ID'),
-								$request->param('OtherID')
-							)
-						)
-					);
-
-				if(!empty($getVars)){
-					$url .= '?' . http_build_query($getVars);
-				}
-
-				$this->response->redirect($url, 301);
-
-				return $this->response;
-			}
-
-			return $this->httpError(404);
-		}
-
-
-		return self::controller_for($page, $request->param('Action'));
+        return static::controller_for($siteTree, $request->param('Action'));
 	}
-
 }

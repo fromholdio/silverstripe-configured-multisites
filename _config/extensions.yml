@@ -1,6 +1,10 @@
 ---
 Name: multisites-extensions
 ---
+SilverStripe\Core\Injector\Injector:
+  SilverStripe\CMS\Controllers\OldPageRedirector:
+    class: Symbiote\Multisites\Extension\MultisitesOldPageRedirector
+
 SilverStripe\CMS\Controllers\CMSMain:
   extensions:
     - Symbiote\Multisites\Admin\MultisitesCMSMainExtension

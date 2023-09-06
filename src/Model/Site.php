@@ -317,11 +317,12 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 	 * Alternative implementation that takes into account the current site
 	 * as the root
 	 *
-	 * @param type $link
-	 * @param type $cache
-	 * @return boolean
+	 * @param string $link
+	 * @param bool $cache
+	 * @return SiteTree|null
 	 */
-	static public function get_by_link($link, $cache = true) {
+	static public function get_by_link($link, $cache = true): ?SiteTree
+    {
 		$current = Multisites::inst()->getCurrentSiteId();
 
 		if(trim($link, '/')) {
@@ -335,17 +336,22 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 		// Grab the initial root level page to traverse down from.
 		$URLSegment = array_shift($parts);
 
+        /** @var SiteTree $sitetree */
 		$sitetree   = DataObject::get_one (
 			SiteTree::class, "\"URLSegment\" = '$URLSegment' AND \"ParentID\" = " . $current, $cache
 		);
 
 		if (!$sitetree) {
-			return false;
+			return null;
 		}
 
 		/// Fall back on a unique URLSegment for b/c.
-		if(!$sitetree && self::nested_urls() && $page = DataObject::get(SiteTree::class, "\"URLSegment\" = '$URLSegment'")->First()) {
-			return $page;
+		if(!$sitetree && self::nested_urls()) {
+            /** @var SiteTree $page */
+            $page = DataObject::get(SiteTree::class, "\"URLSegment\" = '$URLSegment'")->First();
+            if ($page) {
+                return $page;
+            }
 		}
 
 		// Check if we have any more URL parts to parse.
@@ -358,7 +364,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 			);
 
 			if(!$next) {
-				return false;
+				return null;
 			}
 
 			$sitetree->destroy();
