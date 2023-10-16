@@ -2,7 +2,9 @@
 
 namespace Symbiote\Multisites\Control;
 
+use Psr\Log\LoggerInterface;
 use SilverStripe\CMS\Controllers\ContentController;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\View\Parsers\URLSegmentFilter;
 use Symbiote\Multisites\Multisites;
@@ -22,7 +24,9 @@ class MultisitesFrontController extends ModelAsController
         $request = $this->getRequest();
         $urlSegment = $request?->param('URLSegment');
         if (empty($urlSegment)) {
-            throw new \Exception('MultisitesFrontController->getNestedController(): was not passed a URLSegment value.');
+            $urlSegment = 'home';
+            Injector::inst()->get(LoggerInterface::class)->info('No URLSegment to MultisitesFrontController for requested URL: "' . $request?->getURL(true) . '"');
+            //throw new \Exception('MultisitesFrontController->getNestedController(): was not passed a URLSegment value.');
         }
 
         $siteID = Multisites::inst()->getCurrentSiteId();
