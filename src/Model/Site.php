@@ -206,14 +206,14 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 	}
 
 	public function Link($action = null) {
-		if ($this->ID && $this->ID == Multisites::inst()->getActiveSite()->getField('ID')) {
+		if ($this->ID && $this->ID == Multisites::inst()->getActiveSite()?->getField('ID')) {
 			return parent::Link($action);
 		}
 		return Controller::join_links($this->RelativeLink($action));
 	}
 
 	public function RelativeLink($action = null) {
-		if($this->ID && $this->ID == Multisites::inst()->getActiveSite()->getField('ID')) {
+		if($this->ID && $this->ID == Multisites::inst()->getActiveSite()?->getField('ID')) {
 			return $action;
 		} else {
 			return Controller::join_links($this->getUrl(), $action);
