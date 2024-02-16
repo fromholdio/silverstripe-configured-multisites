@@ -1,116 +1,28 @@
 # SilverStripe Multisites
 
-[![Build Status](https://travis-ci.org/symbiote/silverstripe-multisites.svg?branch=master)](https://travis-ci.org/symbiote/silverstripe-multisites)
+## v8.0.0
 
-## Overview
+Requires Silverstripe v5.x.
 
-Allows for multiple websites to be managed through a single site tree.
+This major version departs from the previous approach of [symbiote/silverstripe-multisites](https://github.com/symbiote/silverstripe-multisites), which handles
+hosts and aliases and themes and so forth via the CMS interface. Instead, this version requires this to be defined in .env and config yml.
 
-This is an alternative module to the Subsites module; it avoids any session
-tracking of the 'current' website, and doesn't perform any query modification
-at runtime to change the 'site' context of queries you execute
+This allows, for example, deployment to a development environment, without requiring changes in the database to site domain names. These are set via dev identifiers in .env,
+and are updated upon running dev/build in the new environment.
 
-**Compatible with SilverStripe 4.0.x**
+It also reflects the strong opinion that those types of values should not be managed in the CMS, they are not relevant to content editors. Rather, they are managed by
+developers/devops.
 
-* Please see 4.0.x for 3.5 compatibility
-* Please see the 1.2.x version for 3.1 compatibility
+This version also includes many fixes and improvements for Silverstripe 5.x compatibility.
 
-## Upgrading to SS4
+Documentation to come, and likely a vendor/package name change. In the meantime, see `.env.example` and `app-config.yml.example` for how to define your sites.
 
-The following important changes have happened
+The data model has not changed, making migration possible.
 
-* Themes must now be explicitly configured in your project config. Set
-  `Site.available_themes` in yml config. This must be a map of themename: Label
-* Site specific Assets folders are not currently supported due to the
-  fundamental change to asset management. This will be reviewed over time
+## Migration
 
-
-## Requirements
-
-* SilverStripe 4.*
-* [MultivalueField](https://github.com/nyeholt/silverstripe-multivaluefield)
-
-## Installation
-
-* Add the module and the multivaluefield module
-* Run `dev/build`
-
-## Setting up sites (and additional sites)
-
-* In the CMS go to the Pages section and click on the Website
-* Enter in the full path to the site in the 'Host' field, without the `http://`
-  lead - eg `mysitedomain.com` or `localhost/sub/folder` for a development site
-* Hit save
-* To add a new site, click the Pages section; you should have an 'Add site'
-  button
-* Enter details about the new site, the Host field being the most important
-
-## Configuration
-
-```
-Site:
-  available_themes:
-    name: Label
-```
-
-To support cascading themes, provide a comma-separated list of themes for 'name' in
-configuration.
-
-## Assets management
-
-NOTE: This is currently NOT working in SS4 due to the change to the asset
-management layer. Once clearer, this will be re-enabled.
-
-You can optionally manage each site's assets in it's own subfolder of the
-root assets/ directory. Add the following extensions in your mysite/config.yml
-file and run ?flush=1. When editing a Site in the CMS, you now have the option
-to select a subfolder of assets/ to contain all assets for that site. This
-folder will be automatically created upon a) saving the site or b) visiting a
-page in the cms that has an upload field.
-
-
-```yml
-FileField:
-  extensions:
-    - MultisitesFileFieldExtension
-
-HtmlEditorField_Toolbar:
-  extensions:
-    - MultisitesHtmlEditorField_ToolbarExtension
-```
-
-Files uploaded through the HTMLEditor will now be uploaded into
-assets/yoursite/Uploads. If you have custom upload fields in the cms
-however, you will need to add the following configuration to them explicitly.
-
-```php
-$fields->fieldByName('Root.Main.Image')->setFolderName('images/page-images')->useMultisitesFolder();
-```
-
-The above call to useMultisitesFolder() will change the folder name from '
-images/page-images' to 'currentsitesubfolder/images/page-images'
-
-## Known issues
-
-When linking to a page that belongs to a different site, SiteTree::Link() will
-return a bad link as it prepends the base URL. Currently the best way to work
-around this is to implement the following in your Page.php (model class).
-
-```php
-/**
- * Overrides SiteTree->Link. Adds a check for cases where we are linking to a
-   page on a
- * different site in this multisites instance.
- * @return String
- **/
-public function Link($action = null) {
-	if($this->SiteID && $this->SiteID == Multisites::inst()->getCurrentSiteId()) {
-		return parent::Link($action);
-	} else {
-		return $this->RelativeLink($action);
-	}
-}
-
-```
-
-* See [GitHub](https://github.com/symbiote/silverstripe-multisites/issues?state=open)
+- Add the module to your project
+- Setup the configuration per the examples in your project .env and _config
+- Ensure that your existing sites have DevID values that match your site-keys in .env and _config
+- Run `dev/build` which will match existing site DevID to the site definitions in config, and update Host, Aliases, Theme, and so forth accordingly.
+- Note: existing sites that have no matching DevID (site-key) definition in your config will be deleted.

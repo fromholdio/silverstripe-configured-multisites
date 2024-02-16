@@ -1,5 +1,7 @@
 ---
-Name: multisites-extensions
+Name: multisites
+After:
+  - pageicons-multisites
 ---
 SilverStripe\Core\Injector\Injector:
   SilverStripe\CMS\Controllers\OldPageRedirector:
@@ -8,6 +10,12 @@ SilverStripe\Core\Injector\Injector:
 SilverStripe\CMS\Controllers\CMSMain:
   extensions:
     - Symbiote\Multisites\Admin\MultisitesCMSMainExtension
+
+# Add path to editor.css per theme, HTMLEditorField will use
+# editor.css associated with the theme of the active page.
+# SilverStripe\CMS\Controllers\CMSMain:
+#   multisites_editor_css_dir:
+#     theme-name: 'dist/css'
 
 SilverStripe\Control\Controller:
   extensions:
@@ -22,12 +30,17 @@ SilverStripe\Admin\ModelAdmin:
     - Symbiote\Multisites\Admin\MultisitesModelAdminExtension
 
 SilverStripe\CMS\Model\SiteTree:
+  create_default_pages: false
   can_be_root: false
   extensions:
     - Symbiote\Multisites\Extension\MultisitesSiteTreeExtension
 
 Symbiote\Multisites\Model\Site:
+  icon: 'innoweb/silverstripe-page-icons: client/icons/globe.svg'
   can_be_root: true
+  hide_ancestor: Symbiote\Multisites\Model\Site
+  defaults:
+    Scheme: https
 
 SilverStripe\Reports\Report:
   excluded_reports:
@@ -37,13 +50,12 @@ SilverStripe\Reports\Report:
     - SilverStripe\CMS\Reports\BrokenFilesReport
     - SilverStripe\CMS\Reports\BrokenVirtualPagesReport
     - SilverStripe\CMS\Reports\BrokenRedirectorPagesReport
-
   extensions:
     - Symbiote\Multisites\Extension\MultisitesReport
 
 ---
-Name: multisites-extensions-security
-After: multisites-extensions
+Name: multisites-security
+After: multisites
 Except:
   classexists: 'SilverStripe\LoginForms\EnablerExtension'
 ---

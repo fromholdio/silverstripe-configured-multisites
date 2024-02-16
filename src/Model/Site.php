@@ -3,23 +3,21 @@
 namespace Symbiote\Multisites\Model;
 
 use SilverStripe\Admin\LeftAndMain;
+use SilverStripe\Core\Environment;
 use SilverStripe\Core\Manifest\ModuleManifest;
+use SilverStripe\SiteConfig\SiteConfig;
+use SilverStripe\Versioned\Versioned;
+use Symbiote\Multisites\Control\MultisitesRootController;
 use Symbiote\Multisites\Multisites;
 use Symbiote\MultiValueField\Fields\MultiValueTextField;
 use Page;
 use SilverStripe\Assets\Folder;
-use SilverStripe\Forms\DropdownField;
-use SilverStripe\Forms\HeaderField;
 use SilverStripe\Forms\TextField;
-use SilverStripe\Forms\OptionsetField;
-use SilverStripe\Forms\CheckboxField;
-use SilverStripe\Forms\TextareaField;
 use SilverStripe\Forms\Tab;
 use SilverStripe\Forms\TabSet;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\ORM\ArrayLib;
-use SilverStripe\Forms\TreeDropdownField;
 use SilverStripe\Security\Permission;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\Controller;
@@ -82,7 +80,12 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
 	private static $icon = 'symbiote/silverstripe-multisites: client/images/world.png';
 
-	public function getCMSFields()
+    public function getFilesUploadPath(): string
+    {
+        return rtrim($this->getComponent('Folder')->getFilename(), '/');
+    }
+
+	public function getCMSFields(): FieldList
     {
         if (!$this->canEdit() && Controller::curr() instanceof LeftAndMain) {
             if ($this->hasMethod('getNoEditPermissionCMSFields')) {
@@ -110,45 +113,25 @@ class Site extends Page implements HiddenClass, PermissionProvider {
             });
         }
 
-        $fields = new FieldList(new TabSet('Root', new Tab(
-			'Main',
-			new HeaderField('SiteConfHeader', _t('Multisites.SITECONF', 'Site Configuration')),
-			new TextField('Title', _t('Multisites.TITLE', 'Title')),
-			new TextField('Tagline', _t('Multisites.TAGLINE', 'Tagline/Slogan')),
-			new HeaderField('SiteURLHeader', _t('Multisites.SITEURL', 'Site URL')),
-			new OptionsetField('Scheme', _t('Multisites.SCHEME', 'Scheme'), array(
-				'any'   => _t('Multisites.ANY', 'Any'),
-				'http'  => _t('Multisites.HTTP', 'HTTP'),
-				'https' => _t('Multisites.HTTPS', 'HTTPS (HTTP Secure)')
-			)),
-			new TextField('Host', _t('Multisites.HOST', 'Host')),
-			new MultiValueTextField(
-				'HostAliases',_t('Multisites.HOSTALIASES','Host Aliases')
-			),
-			new CheckboxField('IsDefault', _t(
-				'Multisites.ISDEFAULT', 'Is this the default site?'
-			)),
-			new HeaderField('SiteAdvancedHeader', _t('Multisites.SiteAdvancedHeader', 'Advanced Settings')),
-            TextareaField::create('RobotsTxt', _t('Multisites.ROBOTSTXT', 'Robots.txt'))
-            	->setDescription(_t('Multisites.ROBOTSTXTUSAGE', '<p>Please consult <a href="http://www.robotstxt.org/robotstxt.html" target="_blank">http://www.robotstxt.org/robotstxt.html</a> for usage of the robots.txt file.</p>'))
-		)));
+        $fields = FieldList::create(
+            TabSet::create(
+                'Root',
+                $mainTab = Tab::create(
+                    'Main',
+                    $titleField = TextField::create('Title', _t('Multisites.SITENAME', 'Site name')),
+                    $hostField = TextField::create('Host', _t('Multisites.DOMAIN', 'Domain')),
+                )
+            )
+        );
 
-		$devIDs = Config::inst()->get('Multisites', 'developer_identifiers');
-		if(is_array($devIDs)){
-			if(!ArrayLib::is_associative($devIDs)) $devIDs = ArrayLib::valuekey($devIDs);
-			$fields->addFieldToTab('Root.Main', DropdownField::create('DevID', _t(
-				'Multisites.DeveloperIdentifier', 'Developer Identifier'),
-				$devIDs
-			));
-		}
+        $titleField->setReadonly(true);
+        $hostField->setReadonly(true);
 
-		if(Multisites::inst()->assetsSubfolderPerSite()){
-			$fields->addFieldToTab(
-				'Root.Main',
-				new TreeDropdownField('FolderID', _t('Multisites.ASSETSFOLDER', 'Assets Folder'), Folder::class),
-				'SiteURLHeader'
-			);
-		}
+        if ($this->getField('HostAliases')->getValue()) {
+            $aliasesField = MultiValueTextField::create('HostAliases',_t('Multisites.HOSTALIASES','Host Aliases'));
+            $aliasesField->setReadonly(true);
+            $mainTab->push($aliasesField);
+        }
 
 		if(!Permission::check('SITE_EDIT_CONFIGURATION')){
 			foreach ($fields->dataFields() as $field) {
@@ -220,7 +203,8 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 		}
 	}
 
-	public function onBeforeWrite() {
+	public function onBeforeWrite(): void
+    {
 		$normalise = function($url) {
 			return trim(str_replace(array('http://', 'https://'), '', $url), '/');
 		};
@@ -274,7 +258,8 @@ class Site extends Page implements HiddenClass, PermissionProvider {
         throw new \LogicException('Sorry, sites cannot be duplicated');
     }
 
-	public function onAfterWrite() {
+	public function onAfterWrite(): void
+    {
 		Multisites::inst()->build();
 		parent::onAfterWrite();
 	}
@@ -282,35 +267,225 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 	/**
 	 * Make sure there is a site record.
 	 */
-	public function requireDefaultRecords() {
+	public function requireDefaultRecords(): void
+    {
 		parent::requireDefaultRecords();
 
-		if(Site::get()->count() > 0) {
-			return;
-		}
+        if (get_class($this) !== Site::class) {
+            return;
+        }
 
-		$site = Site::create();
-		$site->Title = _t('Multisites.DEFAULTSITE', 'Default Site');
-		$site->IsDefault = true;
-		$site->FolderID = Folder::find_or_make('default-site')->ID;
-		$site->write();
-		$site->copyVersionToStage('Stage', 'Live');
+        $siteConfig = SiteConfig::current_site_config();
 
-		DB::alteration_message('Default site created', 'created');
+        $siteName = Environment::getEnv('CUST_DEFAULT_SITENAME');
+        if (isset($siteName)) {
+            $currentSiteName = $siteConfig->Title;
+            if ($currentSiteName !== $siteName) {
+                $siteConfig->Title = $siteName;
+                $siteConfig->write();
+                DB::alteration_message(
+                    'SiteConfig title updated from "' . $currentSiteName . '" '
+                    . 'to "' . $siteName . '"',
+                    'changed'
+                );
+            }
+        }
 
-		$pages = SiteTree::get()->exclude('ID', $site->ID)->filter('ParentID', 0);
-		$count = count($pages);
-		if ($count > 0) {
-			foreach($pages as $page) {
-				$page->ParentID = $site->ID;
-				$page->write();
-				if ($page->isPublished()) {
-					$page->copyVersionToStage('Stage', 'Live');
-				}
-			}
+        $defaultSites = Environment::getEnv('CUST_DEFAULT_SITES');
+        if (!isset($defaultSites)) return;
 
-			DB::alteration_message("Moved $count existing pages under new default site.", 'changed');
-		}
+        $defaultSites = json_decode($defaultSites, true);
+        if (!is_array($defaultSites) || count($defaultSites) < 1) return;
+
+        $devIDs = Config::inst()->get(Multisites::class, 'developer_identifiers');
+        if (is_array($devIDs)){
+            if (ArrayLib::is_associative($devIDs)) {
+                $devIDs = array_keys($devIDs);
+            }
+            $devIDs = ArrayLib::valuekey($devIDs);
+        }
+        else {
+            throw new \LogicException(
+                'To use env value CUST_DEFAULT_SITES you must define the $developer_identifiers '
+                . 'on ' . Multisites::class . '.'
+            );
+        }
+
+        $devSettings = Config::inst()->get(Multisites::class, 'default_settings');
+
+        foreach ($defaultSites as $devID => $hosts)
+        {
+            if (!isset($devIDs[$devID])) {
+                throw new \UnexpectedValueException(
+                    'Multisites DevID "' . $devID . '" is not defined in $developer_identifiers '
+                    . 'on ' . Multisites::class . '.'
+                );
+            }
+
+            $siteAliases = null;
+            if (is_string($hosts)) {
+                $siteHost = $hosts;
+            }
+            else if (is_array($hosts)) {
+                $siteHost = $hosts[0];
+                if (count($hosts) > 1) {
+                    unset($hosts[0]);
+                    $siteAliases = $hosts;
+                }
+            }
+            else {
+                throw new \UnexpectedValueException(
+                    'You have an invalid host value assigned to devID "' . $devID . '" '
+                    . 'in env value CUST_DEFAULT_SITES.'
+                );
+            }
+
+            $settings = $devSettings[$devID] ?? [];
+
+            $siteClass = isset($settings['class']) ? $settings['class'] : Site::class;
+            if (!is_a($siteClass, Site::class, true)) {
+                throw new \UnexpectedValueException(
+                    'You Multisites $default_settings contains an invalid site class of '
+                    . $siteClass . '. Class must be a valid subclass of ' . Site::class . '.'
+                );
+            }
+
+            $siteTitle = $settings['title'] ?? 'New Site';
+            $siteIsDefault = $settings['isdefault'] ?? false;
+            $siteIsDefault = (bool) $siteIsDefault;
+            $siteFolder = $settings['folder'] ?? $devID;
+
+            $changes = [];
+
+            if (isset($settings['theme'])) {
+                $siteTheme = $settings['theme'];
+            }
+            else {
+                throw new \UnexpectedValueException(
+                    'Your new Site "' . $siteTitle . '" is missing a default theme config '
+                    . 'value for its Dev Identifier "' . $devID . '".'
+                );
+            }
+
+            $site = Site::get()->find('DevID', $devID);
+            if (!$site || !$site->exists()) {
+                $site = $siteClass::create();
+                $site->Title = $siteTitle;
+                $site->DevID = $devID;
+            }
+            elseif ($site->Title !== $siteTitle) {
+                $site->Title = $siteTitle;
+                $changes[] = 'Title updated to "' . $siteTitle . '"';
+            }
+
+            if ($site->ClassName !== $siteClass) {
+                $site->ClassName = $siteClass;
+                $changes[] = 'Class updated to "' . $siteClass . '"';
+            }
+
+            if ($site->Host !== $siteHost) {
+                $site->Host = $siteHost;
+                $changes[] = 'Host updated to "' . $siteHost . '"';
+            }
+
+            if ($site->getField('HostAliases')->getValue() !== $siteAliases) {
+                $site->HostAliases = $siteAliases;
+                $changes[] = 'Host Aliases updated for ' . $site->Title;
+            }
+
+            $siteFolderID = (int) Folder::find_or_make($siteFolder)->ID;
+            if ((int) $site->FolderID !== $siteFolderID) {
+                $site->FolderID = $siteFolderID;
+                $changes[] = 'Folder updated to "' . $siteFolder . '"';
+            }
+
+            if ((bool) $site->IsDefault !== $siteIsDefault) {
+                $site->IsDefault = $siteIsDefault;
+                $changes[] = 'Set as Default Site';
+            }
+
+            if ($site->Theme !== $siteTheme) {
+                $site->Theme = $siteTheme;
+                $changes[] = 'Theme updated to "' . $siteTheme . '"';
+            }
+
+            if ($site->isInDB()) {
+                if (count($changes) > 0) {
+                    $site->write();
+                    $site->publishSingle();
+                    $site->flushCache();
+                    DB::alteration_message(
+                        'Site "' . $site->Title . '" updated: ' . implode(' - ', $changes),
+                        'changed'
+                    );
+                }
+            }
+            else {
+                $site->write();
+                $site->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+                DB::alteration_message(
+                    'New site "' . $siteTitle . '" created as ' . $siteClass,
+                    'created'
+                );
+            }
+
+            $homeClass = $settings['home']['class'] ?? \Page::class;
+            $homeTitle = $settings['home']['title'] ?? 'Home';
+            $homeLink = MultisitesRootController::get_homepage_link();
+
+            if (!is_a($homeClass, SiteTree::class, true)) {
+                throw new \UnexpectedValueException(
+                    ' You have set a $default_settings.devID.home.class value of ' . $homeClass
+                    . '. This is not a valid SiteTree subclass.'
+                );
+            }
+
+            $homePage = SiteTree::get()
+                ->filter([
+                    'ParentID' => $site->ID,
+                    'URLSegment' => $homeLink
+                ])
+                ->first();
+
+            if ($homePage && $homePage->exists())
+            {
+                if ($homePage->ClassName !== $homeClass)
+                {
+                    $currentClass = $homePage->ClassName;
+                    $currentTitle = $homePage->Title;
+                    $homePage->ClassName = $homeClass;
+                    $homePage->write();
+                    $homePage->publishSingle();
+                    $homePage->flushCache();
+                    $message = 'Existing home page titled "' . $currentTitle . '" of class ' . $currentClass
+                        .  ' converted to class ' . $homeClass . ' for site "' . $siteTitle . '" (' . $devID . ')';
+                    DB::alteration_message($message,'changed');
+                }
+            }
+            else {
+                $homePage = $homeClass::create();
+                $homePage->Title = $homeTitle;
+                $homePage->URLSegment = $homeLink;
+                $homePage->ParentID = $site->ID;
+                $homePage->Sort = 1;
+                $homePage->write();
+                $homePage->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
+                $message = $homeClass . ' titled "' . $homeTitle .'" created as home page for site '
+                    . '"' . $siteTitle . '" (' . $devID . ')';
+                DB::alteration_message($message,'created');
+            }
+        }
+
+        $otherSites = Site::get()->exclude('DevID', array_keys($devIDs));
+        foreach ($otherSites as $otherSite) {
+            $otherSiteTitle = $otherSite->Title;
+            $otherSite->doUnpublish();
+            $otherSite->doArchive();
+            DB::alteration_message(
+                'Archived Site not assigned a DevID from $developer_identifiers: "' . $otherSiteTitle . '"',
+                'deleted'
+            );
+        }
 	}
 
 	/**

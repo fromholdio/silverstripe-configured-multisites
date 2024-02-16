@@ -1,0 +1,62 @@
+---
+Name: app-multisites-example
+---
+
+SilverStripe\CMS\Controllers\CMSMain:
+    multisites_editor_css_dir:
+        theme-name: 'dist/css'
+
+Symbiote\Multisites\Multisites:
+    site_features:
+        site-key-a:
+            - feature1
+            - feature2
+            - feature3
+    developer_identifiers:
+        site-key-a: DevIDA
+        site-key-b: DevIDB
+        site-key-c: DevIDC
+    default_settings:
+        site-key-a:
+            title: 'My site title A'
+            class: Path\To\Sites\Model\PrimarySite
+            isdefault: true
+            folder: folder-name-a
+            theme: theme-name
+            themes:
+                - '$public'
+                - 'theme-name'
+                - '/app'
+                - '$default'
+            home:
+                class: Path\To\Pages\HomePage
+                title: 'Home'
+            can_view_type: Anyone
+        site-key-b:
+            title: 'My site title B'
+            class: Path\To\Sites\Model\SatelliteSite
+            folder: folder-name-b
+            theme: theme-name
+            themes:
+                - '$public'
+                - 'theme-name'
+                - '/app'
+                - '$default'
+            home:
+                class: Path\To\Pages\OtherHomePage
+                title: 'Home'
+            can_view_type: Anyone
+        site-key-c:
+            title: 'My site title C'
+            class: Path\To\Sites\Model\SatelliteSite
+            folder: folder-name-c
+            theme: other-theme-name
+            themes:
+                - '$public'
+                - 'other-theme-name'
+                - '/app'
+                - '$default'
+            home:
+                class: Path\To\Pages\HomePage
+                title: 'Home'
+            can_view_type: Anyone
