@@ -36,7 +36,7 @@ class MultisitesRootController extends RootURLController {
 
             $pageRequest = new HTTPRequest(
                 $request->httpMethod(),
-                $page->RelativeLink(),
+                '/home',
                 $request->getVars(),
                 $request->postVars()
             );
