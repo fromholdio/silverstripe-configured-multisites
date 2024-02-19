@@ -1,8 +1,8 @@
 <?php
 
-namespace Symbiote\Multisites\Extension;
+namespace Fromholdio\ConfiguredMultisites\Extension;
 
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Multisites;
 use SilverStripe\ORM\ArrayList;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Core\Extension;

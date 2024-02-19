@@ -1,11 +1,11 @@
 <?php
-namespace Symbiote\Multisites\Admin;
+namespace Fromholdio\ConfiguredMultisites\Admin;
 
 use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\LiteralField;
 use SilverStripe\Forms\OptionsetField;
 use SilverStripe\ORM\FieldType\DBField;
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Multisites;
 use SilverStripe\Forms\HiddenField;
 use SilverStripe\Forms\TreeDropdownField;
 use SilverStripe\Forms\RequiredFields;

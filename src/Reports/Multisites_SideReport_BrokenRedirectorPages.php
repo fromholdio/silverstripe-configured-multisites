@@ -1,9 +1,9 @@
 <?php
 
-namespace Symbiote\Multisites\Reports;
+namespace Fromholdio\ConfiguredMultisites\Reports;
 
 use SilverStripe\CMS\Reports\BrokenRedirectorPagesReport;
-use Symbiote\Multisites\Extension\MultisitesReport;
+use Fromholdio\ConfiguredMultisites\Extension\MultisitesReport;
 
 class Multisites_SideReport_BrokenRedirectorPages extends BrokenRedirectorPagesReport
 {

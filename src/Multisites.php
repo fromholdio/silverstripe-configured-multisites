@@ -1,9 +1,9 @@
 <?php
 
-namespace Symbiote\Multisites;
+namespace Fromholdio\ConfiguredMultisites;
 
 use SilverStripe\Security\Security;
-use Symbiote\Multisites\Model\Site;
+use Fromholdio\ConfiguredMultisites\Model\Site;
 
 use SilverStripe\Control\Director;
 use SilverStripe\Control\Controller;

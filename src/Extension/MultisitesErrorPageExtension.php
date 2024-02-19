@@ -1,7 +1,7 @@
 <?php
-namespace Symbiote\Multisites\Extension;
+namespace Fromholdio\ConfiguredMultisites\Extension;
 
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Multisites;
 use SilverStripe\Core\Extension;
 
 /**

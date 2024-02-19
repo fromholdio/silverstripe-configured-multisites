@@ -1,8 +1,8 @@
 <?php
 
-namespace Symbiote\Multisites\Extension;
+namespace Fromholdio\ConfiguredMultisites\Extension;
 
-use Symbiote\Multisites\Model\Site;
+use Fromholdio\ConfiguredMultisites\Model\Site;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridFieldExportButton;
 use SilverStripe\Forms\DropdownField;

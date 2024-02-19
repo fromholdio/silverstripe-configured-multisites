@@ -1,8 +1,8 @@
 <?php
 
-namespace Symbiote\Multisites\Extension;
+namespace Fromholdio\ConfiguredMultisites\Extension;
 
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Multisites;
 use SilverStripe\ORM\DatabaseAdmin;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Dev\DevelopmentAdmin;

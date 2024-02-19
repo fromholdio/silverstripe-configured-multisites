@@ -6,7 +6,7 @@ SilverStripe\CMS\Controllers\CMSMain:
     multisites_editor_css_dir:
         theme-name: 'dist/css'
 
-Symbiote\Multisites\Multisites:
+Fromholdio\ConfiguredMultisites\Multisites:
     site_features:
         site-key-a:
             - feature1

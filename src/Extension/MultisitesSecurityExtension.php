@@ -1,8 +1,8 @@
 <?php
 
-namespace Symbiote\Multisites\Extension;
+namespace Fromholdio\ConfiguredMultisites\Extension;
 
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Multisites;
 
 use SilverStripe\View\SSViewer;
 use SilverStripe\Core\Extension;

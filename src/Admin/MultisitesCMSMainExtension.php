@@ -1,11 +1,11 @@
 <?php
-namespace Symbiote\Multisites\Admin;
+namespace Fromholdio\ConfiguredMultisites\Admin;
 
 use SilverStripe\Core\Manifest\ModuleResourceLoader;
 use SilverStripe\Forms\HTMLEditor\TinyMCEConfig;
 use SilverStripe\View\ThemeResourceLoader;
-use Symbiote\Multisites\Multisites;
-use Symbiote\Multisites\Model\Site;
+use Fromholdio\ConfiguredMultisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Model\Site;
 
 use SilverStripe\Core\Config\Config;
 use SilverStripe\CMS\Controllers\CMSMain;

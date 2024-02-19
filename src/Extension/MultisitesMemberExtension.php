@@ -1,6 +1,6 @@
 <?php
 
-namespace Symbiote\Multisites\Extension;
+namespace Fromholdio\ConfiguredMultisites\Extension;
 
 use SilverStripe\Control\Session;
 use SilverStripe\ORM\DataExtension;

@@ -1,14 +1,12 @@
 {
-	"name": "symbiote/silverstripe-multisites",
+	"name": "fromholdio/silverstripe-configured-multisites",
 	"description": "Allows for multiple websites to be managed through a single site tree.",
 	"type": "silverstripe-vendormodule",
 	"keywords": ["silverstripe", "multisites", "subsites"],
-	"homepage": "http://github.com/symbiote/silverstripe-multisites",
+	"homepage": "http://github.com/fromholdio/silverstripe-configured-multisites",
 	"authors": [
-	{
-		"name": "Marcus Nyeholt",
-		"email": "marcus@symbiote.com.au"
-	}
+        {"name": "Luke Fromhold", "email": "luke@fromhold.io"},
+	    {"name": "Marcus Nyeholt", "email": "marcus@symbiote.com.au"}
 	],
 	"require":
 	{
@@ -18,7 +16,7 @@
 	},
     "autoload": {
         "psr-4": {
-            "Symbiote\\Multisites\\": "src/"
+            "Fromholdio\\ConfiguredMultisites\\": "src/"
         }
     },
     "prefer-stable": true,

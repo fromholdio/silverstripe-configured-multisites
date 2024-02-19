@@ -5,11 +5,11 @@ After:
 ---
 SilverStripe\Core\Injector\Injector:
   SilverStripe\CMS\Controllers\OldPageRedirector:
-    class: Symbiote\Multisites\Extension\MultisitesOldPageRedirector
+    class: Fromholdio\ConfiguredMultisites\Extension\MultisitesOldPageRedirector
 
 SilverStripe\CMS\Controllers\CMSMain:
   extensions:
-    - Symbiote\Multisites\Admin\MultisitesCMSMainExtension
+    - Fromholdio\ConfiguredMultisites\Admin\MultisitesCMSMainExtension
 
 # Add path to editor.css per theme, HTMLEditorField will use
 # editor.css associated with the theme of the active page.
@@ -19,26 +19,26 @@ SilverStripe\CMS\Controllers\CMSMain:
 
 SilverStripe\Control\Controller:
   extensions:
-    - Symbiote\Multisites\Extension\MultisitesControllerExtension
+    - Fromholdio\ConfiguredMultisites\Extension\MultisitesControllerExtension
 
 SilverStripe\Security\Member:
   extensions:
-    - Symbiote\Multisites\Extension\MultisitesMemberExtension
+    - Fromholdio\ConfiguredMultisites\Extension\MultisitesMemberExtension
 
 SilverStripe\Admin\ModelAdmin:
   extensions:
-    - Symbiote\Multisites\Admin\MultisitesModelAdminExtension
+    - Fromholdio\ConfiguredMultisites\Admin\MultisitesModelAdminExtension
 
 SilverStripe\CMS\Model\SiteTree:
   create_default_pages: false
   can_be_root: false
   extensions:
-    - Symbiote\Multisites\Extension\MultisitesSiteTreeExtension
+    - Fromholdio\ConfiguredMultisites\Extension\MultisitesSiteTreeExtension
 
-Symbiote\Multisites\Model\Site:
+Fromholdio\ConfiguredMultisites\Model\Site:
   icon: 'innoweb/silverstripe-page-icons: client/icons/globe.svg'
   can_be_root: true
-  hide_ancestor: Symbiote\Multisites\Model\Site
+  hide_ancestor: Fromholdio\ConfiguredMultisites\Model\Site
   defaults:
     Scheme: https
 
@@ -51,7 +51,7 @@ SilverStripe\Reports\Report:
     - SilverStripe\CMS\Reports\BrokenVirtualPagesReport
     - SilverStripe\CMS\Reports\BrokenRedirectorPagesReport
   extensions:
-    - Symbiote\Multisites\Extension\MultisitesReport
+    - Fromholdio\ConfiguredMultisites\Extension\MultisitesReport
 
 ---
 Name: multisites-security
@@ -61,4 +61,4 @@ Except:
 ---
 SilverStripe\Security\Security:
   extensions:
-    - Symbiote\Multisites\Extension\MultisitesSecurityExtension
+    - Fromholdio\ConfiguredMultisites\Extension\MultisitesSecurityExtension

@@ -1,14 +1,14 @@
 <?php
 
-namespace Symbiote\Multisites\Model;
+namespace Fromholdio\ConfiguredMultisites\Model;
 
 use SilverStripe\Admin\LeftAndMain;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Manifest\ModuleManifest;
 use SilverStripe\SiteConfig\SiteConfig;
 use SilverStripe\Versioned\Versioned;
-use Symbiote\Multisites\Control\MultisitesRootController;
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Control\MultisitesRootController;
+use Fromholdio\ConfiguredMultisites\Multisites;
 use Symbiote\MultiValueField\Fields\MultiValueTextField;
 use Page;
 use SilverStripe\Assets\Folder;
@@ -78,7 +78,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
     private static $available_themes = [];
 
-	private static $icon = 'symbiote/silverstripe-multisites: client/images/world.png';
+	private static $icon = 'fromholdio/silverstripe-configured-multisites: client/images/world.png';
 
     public function getFilesUploadPath(): string
     {

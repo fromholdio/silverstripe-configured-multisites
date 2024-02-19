@@ -1,15 +1,15 @@
 <?php
 
-namespace Symbiote\Multisites\Admin;
+namespace Fromholdio\ConfiguredMultisites\Admin;
 
 use SilverStripe\Forms\LiteralField;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Core\Extension;
-use Symbiote\Multisites\Multisites;
-use Symbiote\Multisites\Model\Site;
-use Symbiote\Multisites\Extension\MultisitesAware;
+use Fromholdio\ConfiguredMultisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Model\Site;
+use Fromholdio\ConfiguredMultisites\Extension\MultisitesAware;
 use SilverStripe\Core\ClassInfo;
 
 /**
@@ -31,7 +31,7 @@ class MultisitesModelAdminExtension extends Extension {
 	private $listDataClass;
 
 	/**
-	 * If this dataClass is MultisitesAware, set the Multisites_ActiveSite 
+	 * If this dataClass is MultisitesAware, set the Multisites_ActiveSite
 	 * session variable to one of the follwing:
 	 * a) The SiteID passed in the request params, if it exists
 	 * b) The current site, if the current member is a manager of that site
@@ -123,8 +123,8 @@ class MultisitesModelAdminExtension extends Extension {
 			if(count($source)){
 				$activeSite = $this->getActiveSite();
 				$form->Fields()->push(DropdownField::create(
-					'SiteID', 
-					"Site: ", 
+					'SiteID',
+					"Site: ",
 					$source,
 					$activeSite ? $activeSite->ID : null
 				));

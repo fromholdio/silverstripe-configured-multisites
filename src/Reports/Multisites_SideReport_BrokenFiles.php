@@ -1,9 +1,9 @@
 <?php
 
-namespace Symbiote\Multisites\Reports;
+namespace Fromholdio\ConfiguredMultisites\Reports;
 use SilverStripe\CMS\Reports\BrokenFilesReport;
 use SilverStripe\Forms\FieldList;
-use Symbiote\Multisites\Extension\MultisitesReport;
+use Fromholdio\ConfiguredMultisites\Extension\MultisitesReport;
 
 class Multisites_SideReport_BrokenFiles extends BrokenFilesReport
 {

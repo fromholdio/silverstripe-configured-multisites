@@ -1,8 +1,8 @@
 <?php
-namespace Symbiote\Multisites\Control;
+namespace Fromholdio\ConfiguredMultisites\Control;
 
 use SilverStripe\Control\HTTPResponse;
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Multisites;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\ORM\DB;
 use SilverStripe\Control\HTTPRequest;

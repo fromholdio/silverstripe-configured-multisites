@@ -1,13 +1,13 @@
 <?php
 
-namespace Symbiote\Multisites\Control;
+namespace Fromholdio\ConfiguredMultisites\Control;
 
 use Psr\Log\LoggerInterface;
 use SilverStripe\CMS\Controllers\ContentController;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\View\Parsers\URLSegmentFilter;
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Multisites;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\CMS\Controllers\ModelAsController;
 /**

@@ -1,9 +1,9 @@
 <?php
 
-namespace Symbiote\Multisites\Extension;
+namespace Fromholdio\ConfiguredMultisites\Extension;
 
 use SilverStripe\Core\Extension;
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Multisites;
 
 /**
  * @package silverstripe-multisites

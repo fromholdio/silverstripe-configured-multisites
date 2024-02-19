@@ -1,6 +1,6 @@
 <?php
 
-namespace Symbiote\Multisites\Extension;
+namespace Fromholdio\ConfiguredMultisites\Extension;
 
 use SilverStripe\CMS\Controllers\OldPageRedirector;
 use SilverStripe\Control\Controller;
@@ -8,8 +8,8 @@ use SilverStripe\Control\Director;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Control\HTTPResponse_Exception;
-use Symbiote\Multisites\Control\MultisitesRootController;
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Control\MultisitesRootController;
+use Fromholdio\ConfiguredMultisites\Multisites;
 
 class MultisitesOldPageRedirector extends OldPageRedirector
 {

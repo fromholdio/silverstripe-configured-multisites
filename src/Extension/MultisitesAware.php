@@ -1,10 +1,10 @@
 <?php
 
-namespace Symbiote\Multisites\Extension;
+namespace Fromholdio\ConfiguredMultisites\Extension;
 
 use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DataExtension;
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Multisites;
 
 /**
  * MultisitesAware
@@ -14,7 +14,7 @@ use Symbiote\Multisites\Multisites;
 class MultisitesAware extends DataExtension
 {
     private static $has_one = array(
-        'Site' => 'Symbiote\Multisites\Model\Site'
+        'Site' => 'Fromholdio\ConfiguredMultisites\Model\Site'
     );
 
     public function onBeforeWrite()

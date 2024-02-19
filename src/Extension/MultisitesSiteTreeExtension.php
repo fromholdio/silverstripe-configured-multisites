@@ -1,11 +1,11 @@
 <?php
 
-namespace Symbiote\Multisites\Extension;
+namespace Fromholdio\ConfiguredMultisites\Extension;
 
 use SilverStripe\Control\Controller;
-use Symbiote\Multisites\Control\MultisitesRootController;
-use Symbiote\Multisites\Model\Site;
-use Symbiote\Multisites\Multisites;
+use Fromholdio\ConfiguredMultisites\Control\MultisitesRootController;
+use Fromholdio\ConfiguredMultisites\Model\Site;
+use Fromholdio\ConfiguredMultisites\Multisites;
 
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Control\Director;
@@ -21,7 +21,7 @@ use SilverStripe\CMS\Model\SiteTreeExtension;
 class MultisitesSiteTreeExtension extends SiteTreeExtension
 {
     private static $has_one = array(
-        'Site' => 'Symbiote\Multisites\Model\Site'
+        'Site' => 'Fromholdio\ConfiguredMultisites\Model\Site'
     );
 
     /**

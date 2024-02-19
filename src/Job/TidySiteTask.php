@@ -1,6 +1,6 @@
 <?php
 
-namespace Symbiote\Multisites\Job;
+namespace Fromholdio\ConfiguredMultisites\Job;
 
 use SilverStripe\Versioned\Versioned;
 use SilverStripe\ORM\DB;
