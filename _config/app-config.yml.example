@@ -8,16 +8,16 @@ SilverStripe\CMS\Controllers\CMSMain:
 
 Fromholdio\ConfiguredMultisites\Multisites:
     site_features:
-        site-key-a:
+        DevIDA:
             - feature1
             - feature2
             - feature3
     developer_identifiers:
-        site-key-a: DevIDA
-        site-key-b: DevIDB
-        site-key-c: DevIDC
+        - DevIDA
+        - DevIDB
+        - DevIDC
     default_settings:
-        site-key-a:
+        DevIDA:
             title: 'My site title A'
             class: Path\To\Sites\Model\PrimarySite
             isdefault: true
@@ -32,7 +32,7 @@ Fromholdio\ConfiguredMultisites\Multisites:
                 class: Path\To\Pages\HomePage
                 title: 'Home'
             can_view_type: Anyone
-        site-key-b:
+        DevIDB:
             title: 'My site title B'
             class: Path\To\Sites\Model\SatelliteSite
             folder: folder-name-b
@@ -46,7 +46,7 @@ Fromholdio\ConfiguredMultisites\Multisites:
                 class: Path\To\Pages\OtherHomePage
                 title: 'Home'
             can_view_type: Anyone
-        site-key-c:
+        DevIDC:
             title: 'My site title C'
             class: Path\To\Sites\Model\SatelliteSite
             folder: folder-name-c

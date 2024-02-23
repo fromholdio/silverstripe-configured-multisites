@@ -2,16 +2,15 @@
 
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
-use SilverStripe\Control\Controller;
 use Fromholdio\ConfiguredMultisites\Control\MultisitesRootController;
 use Fromholdio\ConfiguredMultisites\Model\Site;
 use Fromholdio\ConfiguredMultisites\Multisites;
-
-use SilverStripe\Forms\FieldList;
-use SilverStripe\Control\Director;
 use SilverStripe\CMS\Model\SiteTree;
-use SilverStripe\ORM\DataObject;
 use SilverStripe\CMS\Model\SiteTreeExtension;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\Director;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\ORM\DataObject;
 
 /**
  * Modifies SiteTree behaviour when in a multisite
@@ -21,7 +20,7 @@ use SilverStripe\CMS\Model\SiteTreeExtension;
 class MultisitesSiteTreeExtension extends SiteTreeExtension
 {
     private static $has_one = array(
-        'Site' => 'Fromholdio\ConfiguredMultisites\Model\Site'
+        'Site' => Site::class
     );
 
     /**

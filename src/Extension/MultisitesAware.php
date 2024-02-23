@@ -2,9 +2,10 @@
 
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
+use Fromholdio\ConfiguredMultisites\Model\Site;
+use Fromholdio\ConfiguredMultisites\Multisites;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DataExtension;
-use Fromholdio\ConfiguredMultisites\Multisites;
 
 /**
  * MultisitesAware
@@ -14,7 +15,7 @@ use Fromholdio\ConfiguredMultisites\Multisites;
 class MultisitesAware extends DataExtension
 {
     private static $has_one = array(
-        'Site' => 'Fromholdio\ConfiguredMultisites\Model\Site'
+        'Site' => Site::class
     );
 
     public function onBeforeWrite()
