@@ -36,7 +36,6 @@ SilverStripe\CMS\Model\SiteTree:
     - Fromholdio\ConfiguredMultisites\Extension\MultisitesSiteTreeExtension
 
 Fromholdio\ConfiguredMultisites\Model\Site:
-  icon: 'innoweb/silverstripe-page-icons: client/icons/globe.svg'
   can_be_root: true
   hide_ancestor: Fromholdio\ConfiguredMultisites\Model\Site
   defaults:
@@ -62,3 +61,13 @@ Except:
 SilverStripe\Security\Security:
   extensions:
     - Fromholdio\ConfiguredMultisites\Extension\MultisitesSecurityExtension
+
+---
+Name: multisites-icon
+After: multisites
+Only:
+  moduleexists: 'innoweb/silverstripe-page-icons'
+---
+Fromholdio\ConfiguredMultisites\Model\Site:
+  icon: 'innoweb/silverstripe-page-icons: client/icons/website.svg'
+  icon_class: false
