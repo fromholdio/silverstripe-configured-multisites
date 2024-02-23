@@ -14,6 +14,9 @@
 		"silverstripe/admin": "~2.0",
 		"symbiote/silverstripe-multivaluefield": "~6.0"
 	},
+    "replace": {
+        "symbiote/silverstripe-multisites": "self.version"
+    },
     "autoload": {
         "psr-4": {
             "Fromholdio\\ConfiguredMultisites\\": "src/"
