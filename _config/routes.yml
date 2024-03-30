@@ -3,8 +3,9 @@ Name: multisitesmodelascontrollerroutes
 After:
   - '*'
   - 'modelascontrollerroutes'
+  - 'modelascontrollercatchallroute'
 ---
 SilverStripe\Control\Director:
   rules:
     '': Fromholdio\ConfiguredMultisites\Control\MultisitesRootController
-    $URLSegment//$Action/$ID/$OtherID: Fromholdio\ConfiguredMultisites\Control\MultisitesFrontController
+    '$URLSegment//$Action/$ID/$OtherID': Fromholdio\ConfiguredMultisites\Control\MultisitesFrontController
