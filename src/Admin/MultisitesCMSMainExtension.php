@@ -172,7 +172,7 @@ class MultisitesCMSMainExtension extends LeftAndMainExtension
 	public function updateCurrentPageID(&$id){
 		if (!$id) {
 			if($site = Multisites::inst()->getCurrentSite()){
-				$id = $site->Children()->first();
+				$id = $site->Children()->first()->ID;
 			}
 		}
 	}
