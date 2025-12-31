@@ -393,10 +393,12 @@ class Site extends Page implements HiddenClass, PermissionProvider {
                 $changes[] = 'Host Aliases updated for ' . $site->Title;
             }
 
-            $siteFolderID = (int) Folder::find_or_make($siteFolder)->ID;
-            if ((int) $site->FolderID !== $siteFolderID) {
-                $site->FolderID = $siteFolderID;
-                $changes[] = 'Folder updated to "' . $siteFolder . '"';
+            if (strlen($siteFolder) > 0) {
+                $siteFolderID = (int)Folder::find_or_make($siteFolder)->ID;
+                if ((int)$site->FolderID !== $siteFolderID) {
+                    $site->FolderID = $siteFolderID;
+                    $changes[] = 'Folder updated to "' . $siteFolder . '"';
+                }
             }
 
             if ((bool) $site->IsDefault !== $siteIsDefault) {
