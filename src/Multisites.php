@@ -1,24 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites;
 
-use SilverStripe\Security\Security;
 use Fromholdio\ConfiguredMultisites\Model\Site;
-
-use SilverStripe\Control\Director;
-use SilverStripe\Control\Controller;
-use SilverStripe\CMS\Controllers\CMSPageEditController;
+use Psr\SimpleCache\CacheInterface;
 use SilverStripe\Admin\ModelAdmin;
-use SilverStripe\Control\Session;
+use SilverStripe\CMS\Controllers\CMSPageEditController;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\Director;
+use SilverStripe\Control\HTTPRequest;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FileField;
+use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\DB;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
-use SilverStripe\Dev\SapphireTest;
-use SilverStripe\Core\Injector\Injector;
-use SilverStripe\Control\HTTPRequest;
-use SilverStripe\ORM\DB;
-
-use Psr\SimpleCache\CacheInterface;
+use SilverStripe\Security\Security;
 
 /**
  * Contains various multisites utility functions, should be accessed via the
@@ -30,7 +29,7 @@ class Multisites
 {
     const CACHE_KEY = 'multisites_map';
 
-    private static $inst;
+    private static ?Multisites $inst = null;
 
     /**
      * @var Array - A list of identifiers that can be assigned to a Site (in CMS => Site)
@@ -45,7 +44,7 @@ class Multisites
 
     /**
      *
-     * @var Psr\SimpleCache\CacheInterface
+     * @var CacheInterface
      */
     protected $cache;
 
@@ -67,12 +66,9 @@ class Multisites
      */
     protected $current;
 
-    /**
-     * @return Multisites
-     */
-    public static function inst()
+    public static function inst(): Multisites
     {
-        if (!self::$inst) {
+        if (!self::$inst instanceof \Fromholdio\ConfiguredMultisites\Multisites) {
             self::$inst = new self();
             self::$inst->init();
         }
@@ -89,7 +85,7 @@ class Multisites
      * Attempts to load the hostname map from the cache, and rebuilds it if
      * it cannot be loaded.
      */
-    public function init()
+    public function init(): void
     {
         $valid = null;
 
@@ -109,28 +105,29 @@ class Multisites
     /**
      * Builds a map of hostnames to sites, and writes it to the cache.
      */
-    public function build()
+    public function build(): void
     {
-        $this->map = array(
+        $this->map = [
             'default' => null,
-            'hosts' => array()
-        );
+            'hosts' => []
+        ];
 
         if (!DB::is_active() ||
-            !DB::get_schema()->hasTable(Site::config()->table_name)) {
+            !DB::get_schema()->hasTable(Site::config()->get('table_name'))
+        ) {
             return;
         }
 
-        $sites     = Site::get();
+        $sites = Site::get();
 
         /**
-         * 	After duplicating a site, the duplicate contains the same host and causes a 404 during resolution.
-         * 	IMPORTANT, this is required to prevent the site from going down.
-         * 	---
+         *  After duplicating a site, the duplicate contains the same host and causes a 404 during resolution.
+         *  IMPORTANT, this is required to prevent the site from going down.
+         *  ---
          */
-        $sites = $sites->sort(array(
+        $sites = $sites->sort([
             'ID' => 'DESC'
-        ));
+        ]);
 
         // ---
 
@@ -139,13 +136,14 @@ class Multisites
                 $this->map['default'] = $site->ID;
             }
 
-            $hosts = array($site->Host);
+            $hosts = [$site->Host];
             $hosts = array_merge($hosts, (array) $site->HostAliases->getValue());
 
             foreach ($hosts as $host) {
                 if (!$host) {
                     continue;
                 }
+
                 if ($site->Scheme != 'https') {
                     $this->map['hosts']["http://$host"] = $site->ID;
                 }
@@ -164,7 +162,11 @@ class Multisites
      */
     public function getDefaultSiteId()
     {
-        if (isset($this->map['default'])) return $this->map['default'];
+        if (isset($this->map['default'])) {
+            return $this->map['default'];
+        }
+
+        return null;
     }
 
     /**
@@ -195,13 +197,13 @@ class Multisites
         if ($this->map) {
             if (isset($this->map['hosts'][$host])) {
                 return $this->map['hosts'][$host];
-            } else {
-                // see if we're using sub URLs
-                $base = Director::baseURL();
-                $host = rtrim($host.$base, '/');
-                if (isset($this->map['hosts'][$host])) {
-                    return $this->map['hosts'][$host];
-                }
+            }
+
+            // see if we're using sub URLs
+            $base = Director::baseURL();
+            $host = rtrim($host . $base, '/');
+            if (isset($this->map['hosts'][$host])) {
+                return $this->map['hosts'][$host];
             }
         }
 
@@ -226,7 +228,7 @@ class Multisites
      * Useful for code that under the covers swaps the host that we're
      * looking at, in particular any static publisher functionality
      */
-    public function resetCurrentSite()
+    public function resetCurrentSite(): void
     {
         $this->current = null;
     }
@@ -239,16 +241,15 @@ class Multisites
      */
     public function getActiveSite()
     {
-        $controller = Controller::has_curr() ? Controller::curr() : null;
+        $controller = Controller::curr();
         if ($controller instanceof CMSPageEditController) {
-
             // requests to admin/pages/edit/EditorToolbar/viewfile?ID=XX
             // are not reliable because $controller->currentPage()
             // will return an incorrect page based on the ID $_GET parameter
             if ($controller->getRequest()->param('ID') != 'viewfile') {
-                $page = $controller->currentPage();
+                $page = $controller->currentRecord();
 
-                if (!$page) {
+                if (!$page instanceof DataObject) {
                     // fixes fatal error when duplicating page
                     // TODO find the root of the problem...
                     return Site::get()->first();
@@ -266,29 +267,29 @@ class Multisites
                     return $site;
                 }
             }
-        } else if (is_subclass_of($controller, ModelAdmin::class)) {
+        } elseif (is_subclass_of($controller, ModelAdmin::class)) {
             // if we are in a model admin that isn't using the global active_site_session,
             // return it's ActiveSite. This is important for cases where a multisite aware
             // data object is being saved for the first time in a model admin, we need to
             // know what site to save it to
-            if (!$controller->config()->use_active_site_session) {
+            if (!$controller->config()->get('use_active_site_session')) {
                 return $controller->getActiveSite();
             }
         }
 
-        $req = $controller ? $controller->getRequest() : null;
+        $req = $controller instanceof Controller ? $controller->getRequest() : null;
         if ($req && $req->getSession() && ($id = $req->getSession()->get('Multisites_ActiveSite'))) {
             return Site::get()->byID($id);
         }
 
         // if($id = Session::get('MultisitesModelAdmin_SiteID')) { // legacy
-        // 	return Site::get()->byID($id);
+        //  return Site::get()->byID($id);
         // }
 
         return $this->getCurrentSite();
     }
 
-    public function setActiveSite($site)
+    public function setActiveSite($site): void
     {
         $id = is_numeric($site) ? $site : $site->ID;
         $this->getSession()->set('Multisites_ActiveSite', $id);
@@ -310,10 +311,12 @@ class Multisites
      * @var Member $member
      * @return array - Site IDs
      * */
-    public function sitesManagedByMember($member = null)
+    public function sitesManagedByMember($member = null): array
     {
         $member = $member ?: Security::getCurrentUser();
-        if (!$member) return array();
+        if (!$member) {
+            return [];
+        }
 
         $sites = Site::get();
 
@@ -322,7 +325,7 @@ class Multisites
         }
 
         $memberGroups = $member->Groups()->column('ID');
-        $sites        = $sites->filter("EditorGroups.ID:ExactMatch", $memberGroups);
+        $sites        = $sites->filter(["EditorGroups.ID:ExactMatch" => $memberGroups]);
 
         return $sites->column('ID');
     }
@@ -331,7 +334,8 @@ class Multisites
      *
      * @return HTTPRequest
      */
-    protected function getSession() {
+    protected function getSession()
+    {
         if (!Injector::inst()->has(HTTPRequest::class)) {
             return null;
         }

@@ -1,27 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
 use Fromholdio\ConfiguredMultisites\Control\MultisitesRootController;
 use Fromholdio\ConfiguredMultisites\Model\Site;
 use Fromholdio\ConfiguredMultisites\Multisites;
 use SilverStripe\CMS\Model\SiteTree;
-use SilverStripe\CMS\Model\SiteTreeExtension;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
+use SilverStripe\Core\Extension;
 use SilverStripe\Forms\FieldList;
-use SilverStripe\ORM\DataObject;
 
 /**
  * Modifies SiteTree behaviour when in a multisite
  *
  * @package silverstripe-multisites
  */
-class MultisitesSiteTreeExtension extends SiteTreeExtension
+class MultisitesSiteTreeExtension extends Extension
 {
-    private static $has_one = array(
+    private static array $has_one = [
         'Site' => Site::class
-    );
+    ];
 
     /**
      * @return Site
@@ -39,7 +40,7 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
         return Multisites::inst()->getDefaultSite();
     }
 
-    public function updateLink(&$link, $action = null, $relativeLink = null)
+    public function updateLink(&$link, $action = null, $relativeLink = null): void
     {
         $siteID = $this->getOwner()->getField('SiteID');
         $activeSiteID = Multisites::inst()->getActiveSite()?->getField('ID');
@@ -48,17 +49,20 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
         }
     }
 
-    public function updateCMSFields(FieldList $fields)
+    public function updateCMSFields(FieldList $fields): void
     {
-        if ($this->owner->ParentID) {
-            $url = $this->owner->Parent()->AbsoluteLink();
+        $fields->removeByName([
+            'SiteID'
+        ]);
+
+        if ($this->getOwner()->ParentID) {
+            $url = $this->getOwner()->Parent()->AbsoluteLink();
             if (!$url) {
-                $url = $this->owner->Parent()->getURL().'/';
+                $url = $this->getOwner()->Parent()->getURL() . '/';
             }
         } else {
             $url = Director::absoluteBaseURL();
         }
-
 
         $fields->dataFieldByName('URLSegment')->setURLPrefix($url);
     }
@@ -66,7 +70,7 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
     /**
      * Make sure site home pages are loaded at the root of the site.
      */
-    public function contentcontrollerInit($controller)
+    public function contentcontrollerInit($controller): void
     {
 
         // If we've accessed the homepage as /home/, then we should redirect to /.
@@ -74,8 +78,12 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
             && (!isset($controller->urlParams['Action']) || !$controller->urlParams['Action'] ) && !$_POST && !$_FILES && !$controller->redirectedTo()) {
             $getVars = $_GET;
             unset($getVars['url']);
-            if ($getVars) $url     = "?".http_build_query($getVars);
-            else $url     = "";
+            if ($getVars !== []) {
+                $url     = "?" . http_build_query($getVars);
+            } else {
+                $url     = "";
+            }
+
             $controller->redirect($url, 301);
             return;
         }
@@ -84,47 +92,48 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
     /**
      * Keep the SiteID field consistent.
      */
-    public function onBeforeWrite()
+    public function onBeforeWrite(): void
     {
-        if ($this->owner instanceof Site) {
-            if (!$this->owner->ID) {
+        if ($this->getOwner() instanceof Site) {
+            if (!$this->getOwner()->ID) {
                 // Initialise a new Site to the top level
-                $this->owner->SiteID   = 0;
-                $this->owner->ParentID = 0;
+                $this->getOwner()->SiteID   = 0;
+                $this->getOwner()->ParentID = 0;
             }
+
             return;
         }
 
         // Set the SiteID (and ParentID if required) for all new pages.
-        if (!$this->owner->ID) {
-            $parent = $this->owner->Parent();
+        if (!$this->getOwner()->ID) {
+            $parent = $this->getOwner()->Parent();
             if ($parent && $parent->exists()) {
                 // Page is beneath a Site
                 if ($parent instanceof Site) {
-                    $this->owner->SiteID = $parent->ID;
+                    $this->getOwner()->SiteID = $parent->ID;
                 } else {
-                    $this->owner->SiteID = $parent->SiteID;
+                    $this->getOwner()->SiteID = $parent->SiteID;
                 }
             } else {
                 // Create the page beneath the current Site
                 $site = Multisites::inst()->getDefaultSite();
                 if ($site) {
-                    $this->owner->SiteID   = $site->ID;
-                    $this->owner->ParentID = $this->owner->SiteID;
+                    $this->getOwner()->SiteID   = $site->ID;
+                    $this->getOwner()->ParentID = $this->getOwner()->SiteID;
                 }
             }
         }
 
         // Make sure SiteID is changed when site tree is reorganised.
-        if ($this->owner->ID && $this->owner->isChanged('ParentID')) {
+        if ($this->getOwner()->ID && $this->getOwner()->isChanged('ParentID')) {
             // Get the new parent
-            $parent = DataObject::get_by_id(SiteTree::class, $this->owner->ParentID);
+            $parent = SiteTree::get()->byID($this->getOwner()->ParentID);
 
             // Make sure the parent exists
             if ($parent) {
                 // Recursively change SiteID for this and all child pages
                 $siteId = ($parent instanceof Site) ? $parent->ID : $parent->SiteID;
-                $this->owner->updateSiteID($siteId);
+                $this->getOwner()->updateSiteID($siteId);
             }
         }
     }
@@ -137,12 +146,12 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
      *
      * @param int $new The new SiteID
      */
-    public function updateSiteID($new)
+    public function updateSiteID($new): void
     {
-        if ($this->owner->SiteID != $new) {
-            $this->owner->SiteID = $new;
-            if ($this->owner->isChanged('SiteID')) {
-                foreach ($this->owner->Children() as $child) {
+        if ($this->getOwner()->SiteID != $new) {
+            $this->getOwner()->SiteID = $new;
+            if ($this->getOwner()->isChanged('SiteID')) {
+                foreach ($this->getOwner()->Children() as $child) {
                     $child->updateSiteID($new);
                     $child->write();
                 }
@@ -153,17 +162,17 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
     public function alternateAbsoluteLink($action = null)
     {
         $siteID = $this->getOwner()->SiteID;
-        if (!empty($siteID))
-        {
+        if (!empty($siteID)) {
             $link = $this->getOwner()->RelativeLink($action);
-            if (!Director::is_absolute_url($link))
-            {
+            if (!Director::is_absolute_url($link)) {
                 $site = $this->getOwner()->Site();
                 $siteAbsoluteLink = $site->AbsoluteLink();
                 $link = Controller::join_links($siteAbsoluteLink, $link);
             }
+
             return Director::absoluteURL($link);
         }
+
         return $this->getOwner()->RelativeLink($action);
     }
 
@@ -175,7 +184,7 @@ class MultisitesSiteTreeExtension extends SiteTreeExtension
      */
     public function getSite()
     {
-        $site = $this->owner->getComponent('Site');
+        $site = $this->getOwner()->getComponent('Site');
         return ($site->ID) ? $site : Multisites::inst()->getCurrentSite();
     }
 }

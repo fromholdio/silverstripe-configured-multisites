@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
 use Fromholdio\ConfiguredMultisites\Multisites;
-
-use SilverStripe\View\SSViewer;
 use SilverStripe\Core\Extension;
+use SilverStripe\View\SSViewer;
 
 /**
  * Sets the site theme when someone tries to login on a particular URL
@@ -18,7 +19,7 @@ class MultisitesSecurityExtension extends Extension
     /**
      * Sets the theme to the current site theme
      * */
-    function onBeforeSecurityLogin()
+    public function onBeforeSecurityLogin(): void
     {
         $site = Multisites::inst()->getCurrentSite();
         if ($site) {

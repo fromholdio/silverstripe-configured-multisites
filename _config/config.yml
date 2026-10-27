@@ -6,6 +6,8 @@ After:
 SilverStripe\Core\Injector\Injector:
   SilverStripe\CMS\Controllers\OldPageRedirector:
     class: Fromholdio\ConfiguredMultisites\Extension\MultisitesOldPageRedirector
+  SilverStripe\CMS\Forms\CMSMainAddForm:
+    class: Fromholdio\ConfiguredMultisites\Forms\MultisitesCMSMainAddForm
 
 SilverStripe\CMS\Controllers\CMSMain:
   extensions:

@@ -1,91 +1,98 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Model;
 
-use SilverStripe\Admin\LeftAndMain;
-use SilverStripe\Core\Environment;
-use SilverStripe\Core\Manifest\ModuleManifest;
-use SilverStripe\SiteConfig\SiteConfig;
-use SilverStripe\Versioned\Versioned;
 use Fromholdio\ConfiguredMultisites\Control\MultisitesRootController;
 use Fromholdio\ConfiguredMultisites\Multisites;
-use Symbiote\MultiValueField\Fields\MultiValueTextField;
+use LogicException;
 use Page;
+use SilverStripe\Admin\LeftAndMain;
 use SilverStripe\Assets\Folder;
-use SilverStripe\Forms\TextField;
+use SilverStripe\CMS\Controllers\RootURLController;
+use SilverStripe\CMS\Model\SiteTree;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\Director;
+use SilverStripe\Core\ArrayLib;
+use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Convert;
+use SilverStripe\Core\Environment;
+use SilverStripe\Core\Manifest\ModuleManifest;
+use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\Tab;
 use SilverStripe\Forms\TabSet;
-use SilverStripe\Forms\FieldList;
-use SilverStripe\Core\Config\Config;
-use SilverStripe\ORM\ArrayLib;
-use SilverStripe\Security\Permission;
-use SilverStripe\Control\Director;
-use SilverStripe\Control\Controller;
-use SilverStripe\View\Parsers\URLSegmentFilter;
-use SilverStripe\ORM\DB;
-use SilverStripe\CMS\Model\SiteTree;
-use SilverStripe\CMS\Controllers\RootURLController;
-use SilverStripe\Core\Convert;
+use SilverStripe\Forms\TextField;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\View\SSViewer;
+use SilverStripe\ORM\DB;
 use SilverStripe\ORM\HiddenClass;
+use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
+use SilverStripe\SiteConfig\SiteConfig;
+use SilverStripe\Versioned\Versioned;
+use SilverStripe\View\Parsers\URLSegmentFilter;
+use SilverStripe\View\SSViewer;
+use Symbiote\MultiValueField\Fields\MultiValueTextField;
+use UnexpectedValueException;
 
 /**
  * @package silverstripe-multisites
  */
-class Site extends Page implements HiddenClass, PermissionProvider {
+class Site extends Page implements HiddenClass, PermissionProvider
+{
 
-    private static $table_name = 'Site';
+    private static string $table_name = 'Site';
 
-	private static $singular_name = 'Site';
-	private static $plural_name = 'Sites';
-	private static $description = 'A page type which provides a subsite.';
+    private static string $singular_name = 'Site';
 
-	private static $db = array(
-		'Tagline'     => 'Varchar(255)',
-		'Theme'       => 'Varchar(255)',
-		'Scheme'      => 'Enum("any, http, https", "any")',
-		'Host'        => 'Varchar(100)',
-		'HostAliases' => 'MultiValueField',
-		'IsDefault'   => 'Boolean',
-		'DevID'       => 'Varchar', // developer identifier
+    private static string $plural_name = 'Sites';
+
+    private static string $class_description = 'A page type which provides a subsite.';
+
+    private static array $db = [
+        'Tagline'     => 'Varchar(255)',
+        'Theme'       => 'Varchar(255)',
+        'Scheme'      => 'Enum("any, http, https", "any")',
+        'Host'        => 'Varchar(100)',
+        'HostAliases' => 'MultiValueField',
+        'IsDefault'   => 'Boolean',
+        'DevID'       => 'Varchar', // developer identifier
         'RobotsTxt'   => 'Text'
-	);
+    ];
 
-	private static $has_one = array(
-		'Folder' => Folder::class
-	);
+    private static array $has_one = [
+        'Folder' => Folder::class
+    ];
 
-	private static $defaults = array(
-		'Scheme' => 'any',
+    private static array $defaults = [
+        'Scheme' => 'any',
         'RobotsTxt' => ''
-	);
+    ];
 
-	private static $default_sort = '"Title"';
+    private static string $default_sort = '"Title"';
 
-	private static $searchable_fields = array(
-		'Title'     => 'Title',
-		'Domain'    => 'Domain',
-		'IsDefault' => 'Is Default'
-	);
+    private static array $searchable_fields = [
+        'Title'     => 'Title',
+        'Domain'    => 'Domain',
+        'IsDefault' => 'Is Default'
+    ];
 
-	private static $summary_fields = array(
-		'Title'     => 'Title',
-		'Url'       => 'URL',
-		'IsDefault' => 'Is Default'
-	);
+    private static array $summary_fields = [
+        'Title'     => 'Title',
+        'Url'       => 'URL',
+        'IsDefault' => 'Is Default'
+    ];
 
-    private static $available_themes = [];
+    private static array $available_themes = [];
 
-	private static $icon = 'fromholdio/silverstripe-configured-multisites: client/images/world.png';
+    private static string $cms_icon = 'fromholdio/silverstripe-configured-multisites: client/images/world.png';
 
     public function getFilesUploadPath(): string
     {
         return rtrim($this->getComponent('Folder')->getFilename(), '/');
     }
 
-	public function getCMSFields(): FieldList
+    public function getCMSFields(): FieldList
     {
         if (!$this->canEdit() && Controller::curr() instanceof LeftAndMain) {
             if ($this->hasMethod('getNoEditPermissionCMSFields')) {
@@ -94,9 +101,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
         }
 
         if ($this->hasMethod('runCMSFieldsScaffolderBeforeUpdate')) {
-            $this->beforeUpdateSiteCMSFields(function (FieldList $fields) {
-                return $this->runCMSFieldsScaffolderBeforeUpdate($fields);
-            });
+            $this->beforeUpdateSiteCMSFields(fn(FieldList $fields) => $this->runCMSFieldsScaffolderBeforeUpdate($fields));
         }
 
         if ($this->hasMethod('runCMSFieldsScaffolderAfterUpdate')) {
@@ -104,11 +109,13 @@ class Site extends Page implements HiddenClass, PermissionProvider {
                 if ($this->hasMethod('betweenUpdateSiteCMSFields')) {
                     $fields = $this->betweenUpdateSiteCMSFields($fields);
                 }
+
                 $areaField = $fields->fieldByName('Root.Main.ElementalArea');
                 if ($areaField) {
                     $fields->removeByName('ElementalArea');
                     $fields->addFieldToTab('Root.ContentTabSet.ContentMainTab', $areaField);
                 }
+
                 return $this->runCMSFieldsScaffolderAfterUpdate($fields);
             });
         }
@@ -128,24 +135,24 @@ class Site extends Page implements HiddenClass, PermissionProvider {
         $hostField->setReadonly(true);
 
         if ($this->getField('HostAliases')->getValue()) {
-            $aliasesField = MultiValueTextField::create('HostAliases',_t('Multisites.HOSTALIASES','Host Aliases'));
+            $aliasesField = MultiValueTextField::create('HostAliases', _t('Multisites.HOSTALIASES', 'Host Aliases'));
             $aliasesField->setReadonly(true);
             $mainTab->push($aliasesField);
         }
 
-		if(!Permission::check('SITE_EDIT_CONFIGURATION')){
-			foreach ($fields->dataFields() as $field) {
-				$fields->makeFieldReadonly($field);
-			}
-		}
-
-		$this->extend('updateSiteCMSFields', $fields);
-
-        if ($this->hasMethod('removeCMSFieldsScaffolderFields')) {
-            $fields = $this->removeCMSFieldsScaffolderFields($fields);
+        if (!Permission::check('SITE_EDIT_CONFIGURATION')) {
+            foreach ($fields->getDataFields() as $field) {
+                $fields->makeFieldReadonly($field);
+            }
         }
-		return $fields;
-	}
+
+        $this->extend('updateSiteCMSFields', $fields);
+        if ($this->hasMethod('removeCMSFieldsScaffolderFields')) {
+            return $this->removeCMSFieldsScaffolderFields($fields);
+        }
+
+        return $fields;
+    }
 
     /**
      * Allows user code to hook into DataObject::getCMSFields prior to updateCMSFields
@@ -169,109 +176,115 @@ class Site extends Page implements HiddenClass, PermissionProvider {
         $this->afterExtending('updateSiteCMSFields', $callback);
     }
 
-	public function getUrl() {
-		if($this->Host){
-			if(!$this->Scheme || $this->Scheme == 'any') {
-				return 'http://' . $this->Host;
-			} else {
-				return sprintf('%s://%s', $this->Scheme, $this->Host);
-			}
-		}else{
-			return Director::absoluteBaseURL();
-		}
-	}
-
-	public function AbsoluteLink($action = null){
-	    return Controller::join_links(
-	        $this->getURL(),
-            $action
-        );
-	}
-
-	public function Link($action = null) {
-		if ($this->ID && $this->ID == Multisites::inst()->getActiveSite()?->getField('ID')) {
-			return parent::Link($action);
-		}
-		return Controller::join_links($this->RelativeLink($action));
-	}
-
-	public function RelativeLink($action = null) {
-		if($this->ID && $this->ID == Multisites::inst()->getActiveSite()?->getField('ID')) {
-			return $action;
-		} else {
-			return Controller::join_links($this->getUrl(), $action);
-		}
-	}
-
-	public function onBeforeWrite(): void
+    public function getUrl()
     {
-		$normalise = function($url) {
-			return trim(str_replace(array('http://', 'https://'), '', $url), '/');
-		};
+        if ($this->Host) {
+            if (!$this->Scheme || $this->Scheme == 'any') {
+                return 'http://' . $this->Host;
+            }
 
-		$this->Host = $normalise($this->Host);
+            return sprintf('%s://%s', $this->Scheme, $this->Host);
+        }
 
-		if(!is_array($this->HostAliases) && ($aliases = $this->HostAliases->getValue())) {
-			$this->HostAliases = array_map($normalise, $aliases);
-		}
-
-		if($this->IsDefault) {
-			$others = static::get()->where('"SiteTree"."ID" <> ' . $this->ID)->filter('IsDefault', true);
-
-			foreach($others as $other) {
-				$other->IsDefault = false;
-				$other->write();
-			}
-		}
-
-		//Set MenuTitle to NULL so that Title is used
-		$this->MenuTitle = NULL;
-
-		if($this->ID && Multisites::inst()->assetsSubfolderPerSite() && !$this->Folder()->exists()){
-			$this->FolderID = $this->createAssetsSubfolder();
-		}
-
-		parent::onBeforeWrite();
-	}
-
-
-	/**
-	 * creates a subfolder in assets/ to store this sites files
-	 * @param Boolean $write - writes the site object if set to true
-	 * @return Int $folder->ID
-	 **/
-	public function createAssetsSubfolder($write = false){
-		$siteFolderName = singleton(URLSegmentFilter::class)->filter($this->Title);
-		$folder = Folder::find_or_make($siteFolderName);
-
-		if($write){
-			$this->FolderID = $folder->ID;
-			$this->write();
-			if($this->isPublished()) $this->doPublish();
-		}
-
-		return $folder->ID;
-	}
-
-    public function onBeforeDuplicate($original, $doWrite)
-    {
-        throw new \LogicException('Sorry, sites cannot be duplicated');
+        return Director::absoluteBaseURL();
     }
 
-	public function onAfterWrite(): void
+    public function AbsoluteLink($action = null): string
     {
-		Multisites::inst()->build();
-		parent::onAfterWrite();
-	}
+        return Controller::join_links(
+            $this->getURL(),
+            $action
+        );
+    }
 
-	/**
-	 * Make sure there is a site record.
-	 */
-	public function requireDefaultRecords(): void
+    public function Link($action = null)
     {
-		parent::requireDefaultRecords();
+        if ($this->ID && $this->ID == Multisites::inst()->getActiveSite()?->getField('ID')) {
+            return parent::Link($action);
+        }
 
-        if (get_class($this) !== Site::class) {
+        return Controller::join_links($this->RelativeLink($action));
+    }
+
+    public function RelativeLink($action = null)
+    {
+        if ($this->ID && $this->ID == Multisites::inst()->getActiveSite()?->getField('ID')) {
+            return $action;
+        }
+
+        return Controller::join_links($this->getUrl(), $action);
+    }
+
+    protected function onBeforeWrite(): void
+    {
+        $normalise = (fn($url): string => trim(str_replace(['http://', 'https://'], '', $url), '/'));
+
+        $this->Host = $normalise($this->Host);
+
+        if (!is_array($this->HostAliases) && ($aliases = $this->HostAliases->getValue())) {
+            $this->HostAliases = array_map($normalise, $aliases);
+        }
+
+        if ($this->IsDefault) {
+            $others = static::get()->where('"SiteTree"."ID" <> ' . $this->ID)->filter(['IsDefault' => true]);
+
+            foreach ($others as $other) {
+                $other->IsDefault = false;
+                $other->write();
+            }
+        }
+
+        //Set MenuTitle to NULL so that Title is used
+        $this->MenuTitle = null;
+
+        if ($this->ID && Multisites::inst()->assetsSubfolderPerSite() && !$this->Folder()->exists()) {
+            $this->FolderID = $this->createAssetsSubfolder();
+        }
+
+        parent::onBeforeWrite();
+    }
+
+
+    /**
+     * creates a subfolder in assets/ to store this sites files
+     * @param Boolean $write - writes the site object if set to true
+     * @return Int $folder->ID
+     **/
+    public function createAssetsSubfolder($write = false)
+    {
+        $siteFolderName = singleton(URLSegmentFilter::class)->filter($this->Title);
+        $folder = Folder::find_or_make($siteFolderName);
+
+        if ($write) {
+            $this->FolderID = $folder->ID;
+            $this->write();
+            if ($this->isPublished()) {
+                $this->publishRecursive();
+            }
+        }
+
+        return $folder->ID;
+    }
+
+    protected function onBeforeDuplicate($original, $doWrite): never
+    {
+        throw new LogicException('Sorry, sites cannot be duplicated');
+    }
+
+    protected function onAfterWrite(): void
+    {
+        Multisites::inst()->build();
+        parent::onAfterWrite();
+    }
+
+    /**
+     * Make sure there is a site record.
+     */
+    public function requireDefaultRecords(): void
+    {
+        parent::requireDefaultRecords();
+
+        if (static::class !== Site::class) {
             return;
         }
 
@@ -292,20 +305,24 @@ class Site extends Page implements HiddenClass, PermissionProvider {
         }
 
         $defaultSites = Environment::getEnv('CUST_DEFAULT_SITES');
-        if (!isset($defaultSites)) return;
+        if (!isset($defaultSites)) {
+            return;
+        }
 
         $defaultSites = json_decode($defaultSites, true);
-        if (!is_array($defaultSites) || count($defaultSites) < 1) return;
+        if (!is_array($defaultSites) || count($defaultSites) < 1) {
+            return;
+        }
 
         $devIDs = Config::inst()->get(Multisites::class, 'developer_identifiers');
-        if (is_array($devIDs)){
+        if (is_array($devIDs)) {
             if (ArrayLib::is_associative($devIDs)) {
                 $devIDs = array_keys($devIDs);
             }
+
             $devIDs = ArrayLib::valuekey($devIDs);
-        }
-        else {
-            throw new \LogicException(
+        } else {
+            throw new LogicException(
                 'To use env value CUST_DEFAULT_SITES you must define the $developer_identifiers '
                 . 'on ' . Multisites::class . '.'
             );
@@ -313,10 +330,9 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
         $devSettings = Config::inst()->get(Multisites::class, 'default_settings');
 
-        foreach ($defaultSites as $devID => $hosts)
-        {
+        foreach ($defaultSites as $devID => $hosts) {
             if (!isset($devIDs[$devID])) {
-                throw new \UnexpectedValueException(
+                throw new UnexpectedValueException(
                     'Multisites DevID "' . $devID . '" is not defined in $developer_identifiers '
                     . 'on ' . Multisites::class . '.'
                 );
@@ -325,16 +341,14 @@ class Site extends Page implements HiddenClass, PermissionProvider {
             $siteAliases = null;
             if (is_string($hosts)) {
                 $siteHost = $hosts;
-            }
-            else if (is_array($hosts)) {
+            } elseif (is_array($hosts)) {
                 $siteHost = $hosts[0];
                 if (count($hosts) > 1) {
                     unset($hosts[0]);
                     $siteAliases = $hosts;
                 }
-            }
-            else {
-                throw new \UnexpectedValueException(
+            } else {
+                throw new UnexpectedValueException(
                     'You have an invalid host value assigned to devID "' . $devID . '" '
                     . 'in env value CUST_DEFAULT_SITES.'
                 );
@@ -342,9 +356,9 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
             $settings = $devSettings[$devID] ?? [];
 
-            $siteClass = isset($settings['class']) ? $settings['class'] : Site::class;
+            $siteClass = $settings['class'] ?? Site::class;
             if (!is_a($siteClass, Site::class, true)) {
-                throw new \UnexpectedValueException(
+                throw new UnexpectedValueException(
                     'You Multisites $default_settings contains an invalid site class of '
                     . $siteClass . '. Class must be a valid subclass of ' . Site::class . '.'
                 );
@@ -359,9 +373,8 @@ class Site extends Page implements HiddenClass, PermissionProvider {
 
             if (isset($settings['theme'])) {
                 $siteTheme = $settings['theme'];
-            }
-            else {
-                throw new \UnexpectedValueException(
+            } else {
+                throw new UnexpectedValueException(
                     'Your new Site "' . $siteTitle . '" is missing a default theme config '
                     . 'value for its Dev Identifier "' . $devID . '".'
                 );
@@ -372,8 +385,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
                 $site = $siteClass::create();
                 $site->Title = $siteTitle;
                 $site->DevID = $devID;
-            }
-            elseif ($site->Title !== $siteTitle) {
+            } elseif ($site->Title !== $siteTitle) {
                 $site->Title = $siteTitle;
                 $changes[] = 'Title updated to "' . $siteTitle . '"';
             }
@@ -393,7 +405,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
                 $changes[] = 'Host Aliases updated for ' . $site->Title;
             }
 
-            if (strlen($siteFolder) > 0) {
+            if ((string) $siteFolder !== '') {
                 $siteFolderID = (int)Folder::find_or_make($siteFolder)->ID;
                 if ((int)$site->FolderID !== $siteFolderID) {
                     $site->FolderID = $siteFolderID;
@@ -421,8 +433,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
                         'changed'
                     );
                 }
-            }
-            else {
+            } else {
                 $site->write();
                 $site->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
                 DB::alteration_message(
@@ -431,12 +442,31 @@ class Site extends Page implements HiddenClass, PermissionProvider {
                 );
             }
 
-            $homeClass = $settings['home']['class'] ?? \Page::class;
+            // migrate existing pages to default site
+            if ($siteIsDefault
+                && ($pages = SiteTree::get()->filter(['ParentID' => 0])->exclude(['ClassName' => Site::class]))
+                && $pages->exists()
+            ) {
+                foreach ($pages as $page) {
+                    $isPublished = $page->isPublished();
+
+                    $page->ParentID = $site->ID;
+                    $page->SiteID = $site->ID;
+                    $page->write();
+
+                    if ($isPublished) {
+                        $page->publishSingle();
+                    }
+                }
+            }
+
+            // generate new home page for site if none exists
+            $homeClass = $settings['home']['class'] ?? Page::class;
             $homeTitle = $settings['home']['title'] ?? 'Home';
             $homeLink = MultisitesRootController::get_homepage_link();
 
             if (!is_a($homeClass, SiteTree::class, true)) {
-                throw new \UnexpectedValueException(
+                throw new UnexpectedValueException(
                     ' You have set a $default_settings.devID.home.class value of ' . $homeClass
                     . '. This is not a valid SiteTree subclass.'
                 );
@@ -449,10 +479,8 @@ class Site extends Page implements HiddenClass, PermissionProvider {
                 ])
                 ->first();
 
-            if ($homePage && $homePage->exists())
-            {
-                if ($homePage->ClassName !== $homeClass)
-                {
+            if ($homePage && $homePage->exists()) {
+                if ($homePage->ClassName !== $homeClass) {
                     $currentClass = $homePage->ClassName;
                     $currentTitle = $homePage->Title;
                     $homePage->ClassName = $homeClass;
@@ -460,11 +488,10 @@ class Site extends Page implements HiddenClass, PermissionProvider {
                     $homePage->publishSingle();
                     $homePage->flushCache();
                     $message = 'Existing home page titled "' . $currentTitle . '" of class ' . $currentClass
-                        .  ' converted to class ' . $homeClass . ' for site "' . $siteTitle . '" (' . $devID . ')';
-                    DB::alteration_message($message,'changed');
+                        . ' converted to class ' . $homeClass . ' for site "' . $siteTitle . '" (' . $devID . ')';
+                    DB::alteration_message($message, 'changed');
                 }
-            }
-            else {
+            } else {
                 $homePage = $homeClass::create();
                 $homePage->Title = $homeTitle;
                 $homePage->URLSegment = $homeLink;
@@ -472,13 +499,13 @@ class Site extends Page implements HiddenClass, PermissionProvider {
                 $homePage->Sort = 1;
                 $homePage->write();
                 $homePage->copyVersionToStage(Versioned::DRAFT, Versioned::LIVE);
-                $message = $homeClass . ' titled "' . $homeTitle .'" created as home page for site '
+                $message = $homeClass . ' titled "' . $homeTitle . '" created as home page for site '
                     . '"' . $siteTitle . '" (' . $devID . ')';
-                DB::alteration_message($message,'created');
+                DB::alteration_message($message, 'created');
             }
         }
 
-        $otherSites = Site::get()->exclude('DevID', array_keys($devIDs));
+        $otherSites = Site::get()->exclude(['DevID' => array_keys($devIDs)]);
         foreach ($otherSites as $otherSite) {
             $otherSiteTitle = $otherSite->Title;
             $otherSite->doUnpublish();
@@ -488,78 +515,20 @@ class Site extends Page implements HiddenClass, PermissionProvider {
                 'deleted'
             );
         }
-	}
-
-	/**
-	 * Alternative implementation that takes into account the current site
-	 * as the root
-	 *
-	 * @param string $link
-	 * @param bool $cache
-	 * @return SiteTree|null
-	 */
-	static public function get_by_link($link, $cache = true): ?SiteTree
-    {
-		$current = Multisites::inst()->getCurrentSiteId();
-
-		if(trim($link, '/')) {
-			$link = trim(Director::makeRelative($link), '/');
-		} else {
-			$link = RootURLController::get_homepage_link();
-		}
-
-		$parts = Convert::raw2sql(preg_split('|/+|', $link));
-
-		// Grab the initial root level page to traverse down from.
-		$URLSegment = array_shift($parts);
-
-        /** @var SiteTree $sitetree */
-		$sitetree   = DataObject::get_one (
-			SiteTree::class, "\"URLSegment\" = '$URLSegment' AND \"ParentID\" = " . $current, $cache
-		);
-
-		if (!$sitetree) {
-			return null;
-		}
-
-		/// Fall back on a unique URLSegment for b/c.
-		if(!$sitetree && self::nested_urls()) {
-            /** @var SiteTree $page */
-            $page = DataObject::get(SiteTree::class, "\"URLSegment\" = '$URLSegment'")->First();
-            if ($page) {
-                return $page;
-            }
-		}
-
-		// Check if we have any more URL parts to parse.
-		if(!count($parts)) return $sitetree;
-
-		// Traverse down the remaining URL segments and grab the relevant SiteTree objects.
-		foreach($parts as $segment) {
-			$next = DataObject::get_one (
-				SiteTree::class, "\"URLSegment\" = '$segment' AND \"ParentID\" = $sitetree->ID", $cache
-			);
-
-			if(!$next) {
-				return null;
-			}
-
-			$sitetree->destroy();
-			$sitetree = $next;
-		}
-
-		return $sitetree;
-	}
-
-    public function getHomePage()
-    {
-        return $this->getByLink('/home');
     }
 
-    public function getByLink($link)
+    /**
+     * Alternative implementation that takes into account the current site
+     * as the root
+     *
+     * @param string $link
+     * @param bool $cache
+     */
+    public static function get_by_link($link, $cache = true): ?SiteTree
     {
-        $current = $this->getField('ID');
-        if(trim($link, '/')) {
+        $current = Multisites::inst()->getCurrentSiteId();
+
+        if (trim($link, '/')) {
             $link = trim(Director::makeRelative($link), '/');
         } else {
             $link = RootURLController::get_homepage_link();
@@ -570,29 +539,82 @@ class Site extends Page implements HiddenClass, PermissionProvider {
         // Grab the initial root level page to traverse down from.
         $URLSegment = array_shift($parts);
 
-        $sitetree   = DataObject::get_one (
-            SiteTree::class, "\"URLSegment\" = '$URLSegment' AND \"ParentID\" = " . $current, false
-        );
+        /** @var SiteTree $sitetree */
+        $sitetree   = DataObject::get(SiteTree::class)->setUseCache(true)->filter("\"URLSegment\" = '$URLSegment' AND \"ParentID\" = " . $current)->first();
+
+        if (!$sitetree) {
+            return null;
+        }
+
+        /// Fall back on a unique URLSegment for b/c.
+        if (!$sitetree && SiteTree::config()->get('nested_urls')) {
+            /** @var SiteTree $page */
+            $page = DataObject::get(SiteTree::class, "\"URLSegment\" = '$URLSegment'")->First();
+            if ($page) {
+                return $page;
+            }
+        }
+
+        // Check if we have any more URL parts to parse.
+        if (!count($parts)) {
+            return $sitetree;
+        }
+
+        // Traverse down the remaining URL segments and grab the relevant SiteTree objects.
+        foreach ($parts as $segment) {
+            $next = DataObject::get(SiteTree::class)->setUseCache(true)->filter("\"URLSegment\" = '$segment' AND \"ParentID\" = $sitetree->ID")->first();
+
+            if (!$next) {
+                return null;
+            }
+
+            $sitetree->destroy();
+            $sitetree = $next;
+        }
+
+        return $sitetree;
+    }
+
+    public function getHomePage()
+    {
+        return $this->getByLink('/home');
+    }
+
+    public function getByLink($link)
+    {
+        $current = $this->getField('ID');
+        if (trim($link, '/')) {
+            $link = trim(Director::makeRelative($link), '/');
+        } else {
+            $link = RootURLController::get_homepage_link();
+        }
+
+        $parts = Convert::raw2sql(preg_split('|/+|', $link));
+
+        // Grab the initial root level page to traverse down from.
+        $URLSegment = array_shift($parts);
+
+        $sitetree   = DataObject::get(SiteTree::class)->setUseCache(true)->filter("\"URLSegment\" = '$URLSegment' AND \"ParentID\" = " . $current)->first();
 
         if (!$sitetree) {
             return false;
         }
 
         /// Fall back on a unique URLSegment for b/c.
-        if(!$sitetree && self::nested_urls() && $page = DataObject::get(SiteTree::class, "\"URLSegment\" = '$URLSegment'")->First()) {
+        if (!$sitetree && SiteTree::config()->get('nested_urls') && $page = DataObject::get(SiteTree::class, "\"URLSegment\" = '$URLSegment'")->First()) {
             return $page;
         }
 
         // Check if we have any more URL parts to parse.
-        if(!count($parts)) return $sitetree;
+        if (!count($parts)) {
+            return $sitetree;
+        }
 
         // Traverse down the remaining URL segments and grab the relevant SiteTree objects.
-        foreach($parts as $segment) {
-            $next = DataObject::get_one (
-                SiteTree::class, "\"URLSegment\" = '$segment' AND \"ParentID\" = $sitetree->ID", false
-            );
+        foreach ($parts as $segment) {
+            $next = DataObject::get(SiteTree::class)->setUseCache(true)->filter("\"URLSegment\" = '$segment' AND \"ParentID\" = $sitetree->ID")->first();
 
-            if(!$next) {
+            if (!$next) {
                 return false;
             }
 
@@ -604,10 +626,10 @@ class Site extends Page implements HiddenClass, PermissionProvider {
     }
 
 
-	/**
-	 * Get the name of the theme applied to this site, allow extensions to override
-	 * @return String
-	 **/
+    /**
+     * Get the name of the theme applied to this site, allow extensions to override
+     * @return String
+     **/
     public function getSiteTheme()
     {
         $theme = $this->Theme;
@@ -615,6 +637,7 @@ class Site extends Page implements HiddenClass, PermissionProvider {
             $theme = Config::inst()->get(SSViewer::class, 'theme');
             $theme = str_replace(' ', '', $theme);
         }
+
         $this->extend('updateGetSiteTheme', $theme);
         return $theme;
     }
@@ -622,15 +645,18 @@ class Site extends Page implements HiddenClass, PermissionProvider {
     public function getSiteThemes()
     {
         $themes = $this->getSiteDefaultSetting('themes');
-        if (is_null($themes))
-        {
+        if (is_null($themes)) {
             $themes = [SSViewer::PUBLIC_THEME];
             $theme = $this->getSiteTheme();
-            if (!is_null($theme)) $themes[] = $theme;
+            if (!is_null($theme)) {
+                $themes[] = $theme;
+            }
+
             $themes[] = ModuleManifest::config()->get('project');
             $themes[] = SSViewer::DEFAULT_THEME;
         }
-        array_walk($themes, 'trim');
+
+        array_walk($themes, trim(...));
         return $themes;
     }
 
@@ -640,75 +666,85 @@ class Site extends Page implements HiddenClass, PermissionProvider {
         $themes = $errorSettings['themes'] ?? null;
         if (empty($themes)) {
             $themes = $this->getSiteThemes();
+        } else {
+            array_walk($themes, trim(...));
         }
-        else {
-            array_walk($themes, 'trim');
-        }
+
         return $themes;
     }
 
     public function getSiteDefaultSetting(string $settingKey)
     {
         $devID = $this->DevID;
-        if (!$devID) return null;
+        if (!$devID) {
+            return null;
+        }
+
         $allSettings = Config::inst()->get(Multisites::class, 'default_settings');
-        if (empty($allSettings[$devID])) return null;
+        if (empty($allSettings[$devID])) {
+            return null;
+        }
 
         $settings = $allSettings[$devID];
-        if (empty($settings[$settingKey])) return null;
+        if (empty($settings[$settingKey])) {
+            return null;
+        }
+
         return $settings[$settingKey];
     }
 
-	/**
-	 * Checks to see if this site has a feature as defined in Muiltisites.site_features config
-	 * @return Boolean
-	 **/
-	public function hasFeature($feature){
-		if(!$this->DevID) return false;
+    /**
+     * Checks to see if this site has a feature as defined in Muiltisites.site_features config
+     **/
+    public function hasFeature($feature): bool
+    {
+        if (!$this->DevID) {
+            return false;
+        }
 
         $sites = Config::inst()->get(Multisites::class, 'site_features');
 
-		if(!isset($sites[$this->DevID])) return false;
+        if (!isset($sites[$this->DevID])) {
+            return false;
+        }
 
-		$features = ArrayLib::valuekey($sites[$this->DevID]);
-
-		if(!isset($features[$feature])) return false;
-
-		return true;
-	}
+        $features = ArrayLib::valuekey($sites[$this->DevID]);
+        return isset($features[$feature]);
+    }
 
 
-	public function providePermissions() {
-		return array(
-			'SITE_EDIT_CONFIGURATION' => array(
-				'name' => 'Edit Site configuration settings. Eg. Site Title, Host Name etc.',
-				'category' => 'Sites',
-			)
-		);
-	}
+    public function providePermissions(): array
+    {
+        return [
+            'SITE_EDIT_CONFIGURATION' => [
+                'name' => 'Edit Site configuration settings. Eg. Site Title, Host Name etc.',
+                'category' => 'Sites',
+            ]
+        ];
+    }
 
-    public function canCreate($member = null, $context = [])
+    public function canCreate($member = null, $context = []): bool
     {
         return false;
     }
 
-    public function canDelete($member = null)
+    public function canDelete($member = null): bool
     {
         return false;
     }
 
-    public function canArchive($member = null)
+    public function canArchive($member = null): bool
     {
         return false;
     }
 
-	/**
-	 *	This corrects an issue when duplicating a site, since the parent comes back as a false object.
-	 */
+    /**
+     *  This corrects an issue when duplicating a site, since the parent comes back as a false object.
+     */
 
-	public function Parent() {
+    public function Parent(): null
+    {
 
-		return null;
-	}
-
+        return null;
+    }
 }

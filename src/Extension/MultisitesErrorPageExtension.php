@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
 use Fromholdio\ConfiguredMultisites\Multisites;
@@ -13,17 +16,16 @@ use SilverStripe\Core\Extension;
  */
 class MultisitesErrorPageExtension extends Extension
 {
-    public function updateErrorFilename(&$name, $statusCode)
+    public function updateErrorFilename(&$name, $statusCode): void
     {
         $site = $this->getOwner()->getSite() ?? null;
-        if (is_null($site)) {
-            $site = Multisites::inst()->getActiveSite();
-        }
+        $site ??= Multisites::inst()->getActiveSite();
 
         $nameParts = ['error'];
         if ($site) {
             $nameParts[] = $site->Host;
         }
+
         $nameParts[] = $this->getOwner()->ErrorCode . '.html';
         $name = implode('-', $nameParts);
     }

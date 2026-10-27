@@ -1,41 +1,55 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Job;
 
-use SilverStripe\Versioned\Versioned;
-use SilverStripe\ORM\DB;
+use Fromholdio\ConfiguredMultisites\Model\Site;
+use Override;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Dev\BuildTask;
+use SilverStripe\ORM\DB;
+use SilverStripe\PolyExecution\PolyOutput;
+use SilverStripe\Versioned\Versioned;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
- * 	This task is designed to smooth out data integrity edge cases when duplicating a site object and children.
- * 	PLEASE NOTE, it's also handy to just clean up a site object and children (in a non-destructive manner).
- * 	@author Nathan Glasl <nathan@symbiote.com.au>
+ *  This task is designed to smooth out data integrity edge cases when duplicating a site object and children.
+ *  PLEASE NOTE, it's also handy to just clean up a site object and children (in a non-destructive manner).
+ *  @author Nathan Glasl <nathan@symbiote.com.au>
  */
 class TidySiteTask extends BuildTask
 {
-    private static $segment = 'TidySiteTask';
-    protected $description = "This task is designed to smooth out data integrity edge cases when duplicating a site object and children. PLEASE NOTE, it's also handy to just clean up a site object and children (in a non-destructive manner).";
+    #[Override]
+    protected static string $commandName = 'TidySiteTask';
+
+    #[Override]
+    protected static string $description = "This task is designed to smooth out data integrity edge cases when duplicating a site object and children. PLEASE NOTE, it's also handy to just clean up a site object and children (in a non-destructive manner).";
+
     protected $siteID;
+
     protected $count       = 0;
+
     // This is so something (events for example) can be purged.
 
     protected $purge;
+
     protected $purged = 0;
 
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
-
-        $this->siteID = $request->getVar('siteID');
-        $purge        = $request->getVar('purge');
+        $this->siteID = $input->getOption('siteID');
+        $purge        = $input->getOption('purge');
         if (class_exists($purge)) {
             $this->purge = $purge;
         }
-        if ($this->siteID) {
 
+        if ($this->siteID) {
             // To begin, clean up the draft pages.
 
-            Versioned::reading_stage('Stage');
+            Versioned::set_reading_mode('Stage.Stage');
             $site = Site::get()->byID($this->siteID);
             if ($site) {
                 $this->recursiveTidy($site->AllChildren());
@@ -43,7 +57,7 @@ class TidySiteTask extends BuildTask
 
             // Then, clean up the published pages (separately to prevent issues).
 
-            Versioned::reading_stage('Live');
+            Versioned::set_reading_mode('Stage.Live');
             $site = Site::get()->byID($this->siteID);
             if ($site) {
                 $this->recursiveTidy($site->AllChildren());
@@ -57,12 +71,14 @@ class TidySiteTask extends BuildTask
         } else {
             DB::alteration_message('Please supply a `<strong>siteID</strong>`.');
         }
+
+        return Command::SUCCESS;
     }
 
     /**
-     * 	This recursively goes through children to ensure everything is tidy.
+     *  This recursively goes through children to ensure everything is tidy.
      */
-    public function recursiveTidy($children)
+    public function recursiveTidy($children): void
     {
 
         foreach ($children as $page) {
@@ -72,14 +88,13 @@ class TidySiteTask extends BuildTask
 
             if ($this->purge && is_a($page, $this->purge, true)) {
                 $page->delete();
-                $this->purged++;
+                ++$this->purged;
                 continue;
             }
 
             // The most common issue is that the site ID doesn't match.
 
             if ($page->SiteID != $this->siteID) {
-
                 // Update it to match.
 
                 $page->SiteID = $this->siteID;
@@ -89,16 +104,13 @@ class TidySiteTask extends BuildTask
             // The next issue is that duplicated URL segments have numbers appended (`URL-segment-2` for example).
 
             if (preg_match('%-[0-9]$%', $page->URLSegment)) {
-
                 // When a page title ends with a number, the URL should match this.
 
                 $last = substr($page->Title, -1);
                 if (is_numeric($last)) {
-
                     // Determine whether this actually needs fixing.
 
                     if ($last !== substr($page->URLSegment, -1)) {
-
                         // Update it to match.
 
                         $page->URLSegment = $page->Title;
@@ -108,15 +120,13 @@ class TidySiteTask extends BuildTask
 
                 // The number appended shouldn't exist.
                 else {
-
                     // Determine whether this is considered unique (otherwise it can't be updated).
 
                     $to = substr($page->URLSegment, 0, -2);
-                    if (!SiteTree::get()->filter(array(
+                    if (!SiteTree::get()->filter([
                             'ParentID' => $page->ParentID,
                             'URLSegment' => $to
-                        ))->exists()) {
-
+                        ])->exists()) {
                         // This isn't unique, so update it.
 
                         $page->URLSegment = $to;
@@ -129,12 +139,17 @@ class TidySiteTask extends BuildTask
 
             if ($write) {
                 $page->write();
-                $this->count++;
+                ++$this->count;
             }
 
             // Where necessary, continue further down.
 
             $this->recursiveTidy($page->AllChildren());
         }
+    }
+
+    public function getOptions(): array
+    {
+        return [new InputOption('siteID', null, InputOption::VALUE_NONE, 'do something specific'), new InputOption('purge', null, InputOption::VALUE_NONE, 'do something specific')];
     }
 }

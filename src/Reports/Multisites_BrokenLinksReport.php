@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Reports;
 
-use SilverStripe\CMS\Reports\BrokenLinksReport;
 use Fromholdio\ConfiguredMultisites\Extension\MultisitesReport;
+use SilverStripe\CMS\Reports\BrokenLinksReport;
 
 class Multisites_BrokenLinksReport extends BrokenLinksReport
 {
 
-    public function columns()
+    public function columns(): float|int|array
     {
         return MultisitesReport::getMultisitesReportColumns() + parent::columns();
     }
@@ -25,8 +27,9 @@ class Multisites_BrokenLinksReport extends BrokenLinksReport
         $records = parent::sourceRecords($params, $sort, $limit);
         $site    = isset($params['Site']) ? (int) $params['Site'] : 0;
         if ($site > 0) {
-            $records = $records->filter('SiteID', $site);
+            return $records->filter('SiteID', $site);
         }
+
         return $records;
     }
 }

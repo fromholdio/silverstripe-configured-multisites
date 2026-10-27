@@ -1,40 +1,30 @@
 <?php
-namespace Fromholdio\ConfiguredMultisites\Admin;
 
+namespace Fromholdio\ConfiguredMultisites\Forms;
+
+use Fromholdio\ConfiguredMultisites\Multisites;
+use SilverStripe\CMS\Controllers\CMSMain;
+use SilverStripe\CMS\Forms\CMSMainAddForm;
 use SilverStripe\Forms\CompositeField;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\HiddenField;
 use SilverStripe\Forms\LiteralField;
 use SilverStripe\Forms\OptionsetField;
-use SilverStripe\ORM\FieldType\DBField;
-use Fromholdio\ConfiguredMultisites\Multisites;
-use SilverStripe\Forms\HiddenField;
 use SilverStripe\Forms\TreeDropdownField;
-use SilverStripe\Forms\RequiredFields;
-use SilverStripe\CMS\Controllers\CMSPageAddController;
+use SilverStripe\Forms\Validation\RequiredFieldsValidator;
+use SilverStripe\ORM\FieldType\DBField;
 
-
-/**
- * An extension to the default page add interface which doesn't allow pages to
- * be created on the root.
- *
- * Can't do a direct extension because that doesn't allow us to control the form object itself.
- *
- * @package silverstripe-multisites
- */
-class MultisitesCMSPageAddController extends CMSPageAddController {
-
-    private static $menu_title = 'Add page';
-
-
-	private static $allowed_actions = array(
-		'AddForm'
-	);
-
-	private static $url_priority = 43;
-
-	public function AddForm()
+class MultisitesCMSMainAddForm extends CMSMainAddForm
+{
+    public function __construct(CMSMain $controller)
     {
-		$form   = parent::AddForm();
-		$fields = $form->Fields();
+        parent::__construct($controller);
+        $this->setValidator(RequiredFieldsValidator::create('ParentID'));
+    }
+
+    protected function createFields(): FieldList
+    {
+        $fields = parent::createFields();
 
         $numericLabelTmpl = '<span class="step-label"><span class="flyout">Step %d. </span><span class="title">%s</span></span>';
 
@@ -43,11 +33,13 @@ class MultisitesCMSPageAddController extends CMSPageAddController {
         $parentWrapper->setTitle(
             DBField::create_field(
                 'HTMLFragment',
-                sprintf($numericLabelTmpl,
+                sprintf(
+                    $numericLabelTmpl,
                     1,
                     _t(
                         'SilverStripe\\CMS\\Controllers\\CMSMain.ChoosePageParentMode',
-                        'Choose where to create this page')
+                        'Choose where to create this page'
+                    )
                 )
             )
         );
@@ -55,7 +47,8 @@ class MultisitesCMSPageAddController extends CMSPageAddController {
         $parentModeField = OptionsetField::create('ParentModeField', null, ['child' => 'child'], 'child');
         $parentWrapper->push($parentModeField);
 
-        $hideParentModeField = LiteralField::create('HideParentModeField',
+        $hideParentModeField = LiteralField::create(
+            'HideParentModeField',
             '<style>#Form_AddForm_ParentModeField_Holder {display: none !important;}</style>'
         );
         $parentWrapper->push($hideParentModeField);
@@ -70,15 +63,14 @@ class MultisitesCMSPageAddController extends CMSPageAddController {
         $parentField->setAttribute('style', 'padding-top:.5385rem;');
 
         $parentID = $this->getRequest()->getVar('ParentID');
-        $parentID = $parentID ? $parentID : Multisites::inst()->getCurrentSiteId();
+        $parentID = $parentID ?: Multisites::inst()->getCurrentSiteId();
+
         $parentField->setValue($parentID);
         $parentWrapper->push($parentField);
 
         $fields->replaceField('ParentModeField', $parentWrapper);
-        $parentWrapper->setForm($form);
+        $parentWrapper->setForm($this);
 
-        $form->setValidator(RequiredFields::create('ParentID'));
-        return $form;
-	}
-
+        return $fields;
+    }
 }

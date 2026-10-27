@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
 use Fromholdio\ConfiguredMultisites\Model\Site;
+use SilverStripe\Core\Extension;
+use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridFieldExportButton;
-use SilverStripe\Forms\DropdownField;
-use SilverStripe\Core\Extension;
 
 /**
  * Override default reports to provide columns and filters that help the user identify which site the
@@ -17,38 +19,39 @@ use SilverStripe\Core\Extension;
 class MultisitesReport extends Extension
 {
 
-    public function updateCMSFields(FieldList $fields)
+    public function updateCMSFields(FieldList $fields): void
     {
         $gfc           = $fields->fieldByName('Report')->getConfig();
-        $columns       = $this->owner->columns();
-        $exportColumns = array();
+        $columns       = $this->getOwner()->columns();
+        $exportColumns = [];
         foreach ($columns as $k => $v) {
             $exportColumns[$k] = is_array($v) ? $v['title'] : $v;
         }
+
         $gfc->getComponentByType(GridFieldExportButton::class)->setExportColumns($exportColumns);
     }
 
-    public static function getMultisitesReportColumns()
+    public static function getMultisitesReportColumns(): array
     {
-        return array(
-            "Title" => array(
+        return [
+            "Title" => [
                 "title" => "Title",
                 "link" => true,
-            ),
-            "Site.Title" => array(
+            ],
+            "Site.Title" => [
                 "title" => "Site"
-            ),
-            "AbsoluteLink" => array(
+            ],
+            "AbsoluteLink" => [
                 "title" => "URL",
                 "link" => true
-            )
-        );
+            ]
+        ];
     }
 
     public static function getSiteParameterField()
     {
         $source = Site::get()->map('ID', 'Title')->toArray();
-        $source = array('0' => 'All') + $source; // works around ajax bug
+        $source = ['0' => 'All'] + $source; // works around ajax bug
         return DropdownField::create('Site', 'Site', $source)->setHasEmptyDefault(false);
     }
 }

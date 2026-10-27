@@ -10,9 +10,9 @@
 	],
 	"require":
 	{
-		"silverstripe/cms": "~5.0",
-		"silverstripe/admin": "~2.0",
-		"symbiote/silverstripe-multivaluefield": "~6.0"
+		"silverstripe/cms": "^6",
+		"silverstripe/admin": "^3",
+		"symbiote/silverstripe-multivaluefield": "^7"
 	},
     "replace": {
         "symbiote/silverstripe-multisites": "self.version"
@@ -21,6 +21,11 @@
         "psr-4": {
             "Fromholdio\\ConfiguredMultisites\\": "src/"
         }
+    },
+    "extra": {
+        "expose": [
+            "client"
+        ]
     },
     "prefer-stable": true,
     "minimum-stability": "dev"

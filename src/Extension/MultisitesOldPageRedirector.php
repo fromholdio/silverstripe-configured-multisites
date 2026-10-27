@@ -1,19 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
+use Exception;
+use Fromholdio\ConfiguredMultisites\Control\MultisitesRootController;
+use Fromholdio\ConfiguredMultisites\Multisites;
 use SilverStripe\CMS\Controllers\OldPageRedirector;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Control\HTTPResponse_Exception;
-use Fromholdio\ConfiguredMultisites\Control\MultisitesRootController;
-use Fromholdio\ConfiguredMultisites\Multisites;
 
 class MultisitesOldPageRedirector extends OldPageRedirector
 {
-    public function onBeforeHTTPError404(HTTPRequest $request)
+    public function onBeforeHTTPError404(HTTPRequest $request): void
     {
         // We need to get the URL ourselves because $request->allParams() only has a max of 4 params
         $params = preg_split('|/+|', $request->getURL() ?? '');
@@ -24,7 +27,7 @@ class MultisitesOldPageRedirector extends OldPageRedirector
 
         $siteID = Multisites::inst()->getCurrentSiteId();
         if (empty($siteID)) {
-            throw new \Exception('MultisitesOldPageRedirector->onBeforeHTTPError404(): could not find a Current Site ID.');
+            throw new Exception('MultisitesOldPageRedirector->onBeforeHTTPError404(): could not find a Current Site ID.');
         }
 
         $page = self::find_old_page($params, $siteID);
@@ -38,7 +41,7 @@ class MultisitesOldPageRedirector extends OldPageRedirector
         }
 
         if ($page && $cleanPage != $cleanURL) {
-            $res = new HTTPResponse();
+            $res = HTTPResponse::create();
             $res->redirect(
                 Controller::join_links(
                     $page,

@@ -1,19 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
 use Fromholdio\ConfiguredMultisites\Multisites;
-use SilverStripe\ORM\DatabaseAdmin;
-use SilverStripe\CMS\Model\SiteTree;
-use SilverStripe\Dev\DevelopmentAdmin;
-use SilverStripe\Dev\DevBuildController;
-use SilverStripe\View\SSViewer;
-use SilverStripe\Core\Config\Config;
+use SilverStripe\Admin\LeftAndMain;
 use SilverStripe\Assets\Upload;
+use SilverStripe\CMS\Model\SiteTree;
+use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Extension;
+use SilverStripe\Dev\Command\DbBuild;
+use SilverStripe\Dev\DevelopmentAdmin;
+use SilverStripe\View\SSViewer;
 
 /**
- * 	@author Nathan Glasl <nathan@symbiote.com.au>
+ *  @author Nathan Glasl <nathan@symbiote.com.au>
  */
 class MultisitesControllerExtension extends Extension
 {
@@ -21,23 +23,22 @@ class MultisitesControllerExtension extends Extension
     /**
      * Sets the theme to the current site theme
      * */
-    public function onAfterInit()
+    public function onAfterInit(): void
     {
-        if ($this->owner instanceof DatabaseAdmin) {
+        if ($this->getOwner() instanceof DbBuild) {
             //
-            // 2016-12-16 -	This is disabled in sitetree.yml to stop users placing
-            //				pages above a Site. However, during dev/build we don't
-            //				want pages validated so they can be placed top-level, and
-            //				then be moved underneath Site during it's
-            //				requireDefaultRecords() call.
+            // 2016-12-16 - This is disabled in sitetree.yml to stop users placing
+            //              pages above a Site. However, during dev/build we don't
+            //              want pages validated so they can be placed top-level, and
+            //              then be moved underneath Site during it's
+            //              requireDefaultRecords() call.
             //
-			SiteTree::config()->can_be_root = true;
+            SiteTree::config()->can_be_root = true;
             return;
         }
 
-        if ($this->owner instanceof DevelopmentAdmin ||
-            $this->owner instanceof DevBuildController ||
-            $this->owner instanceof DatabaseAdmin) {
+        if ($this->getOwner() instanceof DevelopmentAdmin ||
+            $this->getOwner() instanceof DbBuild) {
             return;
         }
 
@@ -47,7 +48,7 @@ class MultisitesControllerExtension extends Extension
         }
 
         // are we on the frontend?
-        if (!$this->owner instanceof \SilverStripe\Admin\LeftAndMain) {
+        if (!$this->getOwner() instanceof LeftAndMain) {
             $themes = $site->getSiteThemes();
             SSViewer::set_themes($themes);
         }

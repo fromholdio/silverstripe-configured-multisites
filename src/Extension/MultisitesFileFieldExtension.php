@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
-use SilverStripe\Core\Extension;
 use Fromholdio\ConfiguredMultisites\Multisites;
+use SilverStripe\Core\Extension;
 
 /**
  * @package silverstripe-multisites
@@ -18,8 +20,9 @@ class MultisitesFileFieldExtension extends Extension
     {
         $site = Multisites::inst()->getActiveSite();
         if (!$site) {
-            return $this->owner;
+            return $this->getOwner();
         }
+
         $multisiteFolder = $site->Folder();
 
         if (!$multisiteFolder->exists()) {
@@ -27,8 +30,8 @@ class MultisitesFileFieldExtension extends Extension
             $multisiteFolder = $site->Folder();
         }
 
-        $this->owner->setFolderName($multisiteFolder->Name.'/'.$this->owner->getFolderName());
+        $this->getOwner()->setFolderName($multisiteFolder->Name . '/' . $this->getOwner()->getFolderName());
 
-        return $this->owner;
+        return $this->getOwner();
     }
 }

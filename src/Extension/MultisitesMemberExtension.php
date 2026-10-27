@@ -1,19 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
-use SilverStripe\Control\Session;
-use SilverStripe\ORM\DataExtension;
-use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Control\HTTPRequest;
+use SilverStripe\Core\Extension;
+use SilverStripe\Core\Injector\Injector;
 
 /**
  * Ensures a user who logs in has their active site reset
  */
-class MultisitesMemberExtension extends DataExtension
+class MultisitesMemberExtension extends Extension
 {
 
-    public function memberLoggedIn()
+    public function memberLoggedIn(): void
     {
         $request = Injector::inst()->get(HTTPRequest::class);
         $session = $request->getSession();

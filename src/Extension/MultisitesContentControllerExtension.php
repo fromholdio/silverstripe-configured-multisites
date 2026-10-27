@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Extension;
 
+use Fromholdio\ConfiguredMultisites\Model\Site;
 use Fromholdio\ConfiguredMultisites\Multisites;
-use SilverStripe\ORM\ArrayList;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Core\Extension;
+use SilverStripe\Model\List\ArrayList;
 
 /**
  * @package silverstripe-multisites
@@ -18,34 +21,36 @@ class MultisitesContentControllerExtension extends Extension
      * instead of ContentController->getMenu()
      * @return ArrayList
      * */
-    public function getSiteMenu($level = 1)
+    public function getSiteMenu($level = 1): ?ArrayList
     {
         $site   = Multisites::inst()->getCurrentSite();
-        $page   = $this->owner->data();
-        $result = new ArrayList();
+        $page   = $this->getOwner()->data();
+        $result = ArrayList::create();
 
         if ($level == 1) {
-            $pages = SiteTree::get()->filter(array(
+            $pages = SiteTree::get()->filter([
                 'ParentID' => $site ? $site->ID : 0,
                 'ShowInMenus' => true
-            ));
+            ]);
         } else {
             $parent = $page;
-            $stack  = array($page);
+            $stack  = [$page];
 
             while (($parent = $parent->Parent()) && $parent->ID > 0 && !($parent instanceof Site)) {
                 array_unshift($stack, $parent);
             }
 
             if (!isset($stack[$level - 2])) {
-                return;
+                return null;
             }
 
             $pages = $stack[$level - 2]->Children();
         }
 
         foreach ($pages as $page) {
-            if ($page->canView()) $result->push($page);
+            if ($page->canView()) {
+                $result->push($page);
+            }
         }
 
         return $result;
@@ -57,6 +62,6 @@ class MultisitesContentControllerExtension extends Extension
      */
     public function Site()
     {
-        return $this->owner->data()->getSite();
+        return $this->getOwner()->data()->getSite();
     }
 }

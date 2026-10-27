@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Reports;
 
-use SilverStripe\CMS\Reports\BrokenVirtualPagesReport;
 use Fromholdio\ConfiguredMultisites\Extension\MultisitesReport;
+use SilverStripe\CMS\Reports\BrokenVirtualPagesReport;
 
 class Multisites_SideReport_BrokenVirtualPages extends BrokenVirtualPagesReport
 {
 
-    public function columns()
+    public function columns(): array
     {
         return MultisitesReport::getMultisitesReportColumns();
     }
@@ -25,8 +27,9 @@ class Multisites_SideReport_BrokenVirtualPages extends BrokenVirtualPagesReport
         $records = parent::sourceRecords($params);
         $site    = isset($params['Site']) ? (int) $params['Site'] : 0;
         if ($site > 0) {
-            $records = $records->filter('SiteID', $site);
+            return $records->filter('SiteID', $site);
         }
+
         return $records;
     }
 }

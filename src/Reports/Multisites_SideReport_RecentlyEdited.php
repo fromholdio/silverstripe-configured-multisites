@@ -1,23 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fromholdio\ConfiguredMultisites\Reports;
 
+use Fromholdio\ConfiguredMultisites\Extension\MultisitesReport;
 use SilverStripe\CMS\Reports\RecentlyEditedReport;
 use SilverStripe\Forms\FieldList;
-use Fromholdio\ConfiguredMultisites\Extension\MultisitesReport;
 
 class Multisites_SideReport_RecentlyEdited extends RecentlyEditedReport
 {
 
-    public function columns()
+    /**
+     * @return mixed[]
+     */
+    public function columns(): array
     {
         $columns               = MultisitesReport::getMultisitesReportColumns();
-        $columns['LastEdited'] = array(
+        $columns['LastEdited'] = [
             "title" => "Last Edited",
-        );
-        $columns['LastEdited'] = array(
+        ];
+        $columns['LastEdited'] = [
             "title" => "Last Edited",
-        );
+        ];
         return $columns;
     }
 
@@ -33,8 +38,9 @@ class Multisites_SideReport_RecentlyEdited extends RecentlyEditedReport
         $records = parent::sourceRecords($params);
         $site    = isset($params['Site']) ? (int) $params['Site'] : 0;
         if ($site > 0) {
-            $records = $records->filter('SiteID', $site);
+            return $records->filter('SiteID', $site);
         }
+
         return $records;
     }
 }
