@@ -22,10 +22,8 @@ use Symfony\Component\Console\Input\InputOption;
  */
 class TidySiteTask extends BuildTask
 {
-    #[Override]
     protected static string $commandName = 'TidySiteTask';
 
-    #[Override]
     protected static string $description = "This task is designed to smooth out data integrity edge cases when duplicating a site object and children. PLEASE NOTE, it's also handy to just clean up a site object and children (in a non-destructive manner).";
 
     protected $siteID;

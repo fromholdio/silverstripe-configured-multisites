@@ -21,12 +21,10 @@ use Symfony\Component\Console\Input\InputInterface;
  * */
 class MultisitesInitAssetsTask extends BuildTask
 {
-    #[Override]
     protected static string $commandName = 'MultisitesInitAssetsTask';
 
     protected $enabled      = true;
 
-    #[Override]
     protected static string $description  = 'move assets to a folder with the name of the current multisite';
 
     /**
